@@ -1,4 +1,5 @@
 import type { NextAuthOptions } from "next-auth";
+import type { Provider } from "next-auth/providers/index";
 import { saveLoginLog, createOAuthUser, getUserByEmail } from "@/app/lib/db";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
@@ -8,7 +9,7 @@ const googleClientId =
   process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
-const providers = [
+const providers: Provider[] = [
   CredentialsProvider({
     id: "credentials",
     name: "Credenciales",
@@ -52,11 +53,12 @@ const providers = [
 if (googleClientId && googleClientSecret) {
   providers.push(
     GoogleProvider({
-      clientId: googleClientId,
-      clientSecret: googleClientSecret,
+      clientId: googleClientId as string,
+      clientSecret: googleClientSecret as string,
     })
   );
 }
+
 
 export const authOptions: NextAuthOptions = {
   providers,
