@@ -80,7 +80,7 @@ El archivo `.env` fue añadido al `.gitignore` para garantizar que nunca sea sub
 
 ##### Base de datos
 
-Se implementó **SQLite** como motor de base de datos. Se eligió este enfoque porque el propio backend gestiona la base de datos sin necesidad de un motor externo, siendo adecuado para fines de prueba. Para entornos de mayor tráfico o producción se recomienda migrar a **MySQL** o **PostgreSQL**.
+Se implementó **SQLite** como motor de base de datos. 
 
 La base de datos cuenta con tres tablas principales:
 
@@ -179,8 +179,7 @@ Se optó por la estrategia **JWT** (en lugar de sesiones en base de datos) para 
  
 #### SQLite con better-sqlite3
  
-Se eligió **SQLite** por su simplicidad operativa: no requiere un servidor de base de datos separado, lo que reduce la superficie de ataque y simplifica el despliegue en un entorno de desarrollo académico. La librería `better-sqlite3` fue preferida sobre otras alternativas por ser sincrónica y no introducir condiciones de carrera, lo cual es importante cuando múltiples callbacks de NextAuth pueden ejecutarse en paralelo.
- 
+Se eligió **SQLite** por su simplicidad operativa: no requiere un servidor de base de datos separado.
 Para producción, se recomienda migrar a **PostgreSQL** o **MySQL**, que ofrecen mejor soporte para concurrencia, backups y cifrado en reposo.
  
 #### bcrypt para el hash de contraseñas
@@ -201,7 +200,7 @@ El mecanismo de reset de contraseña utiliza tokens opacos (aleatorios sin infor
  
 #### Logging de accesos
  
-Se registra cada inicio de sesión con IP, user agent, proveedor y timestamp. Esto permite detectar patrones anómalos como múltiples intentos fallidos, accesos desde IPs inusuales o inicios de sesión en horarios fuera de lo normal. Es una práctica recomendada por estándares como ISO 27001 y NIST SP 800-92 para la gestión de logs de seguridad.
+Se registra cada inicio de sesión con IP, user agent, proveedor y timestamp. Esto permite detectar patrones anómalos como múltiples intentos fallidos, accesos desde IPs inusuales o inicios de sesión en horarios fuera de lo normal. Es una práctica recomendada por estándares como ISO 27001.
  
 #### Control de acceso por rol
  
