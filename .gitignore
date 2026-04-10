@@ -41,6 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 # Base de datos
-data/*
+
 !data/.gitkeep
 resolve-conflicts.js
