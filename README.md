@@ -1,4 +1,4 @@
-# Seguridad de los Sistemas de Información 202
+# Seguridad de los Sistemas de Información 2026
 ## Trabajo Práctico Integrador — Avances
 
 **Grupo:** DDV
