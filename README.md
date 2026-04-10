@@ -3,11 +3,11 @@
 
 **Grupo:** DDV
 
-| Integrante | 
+| Integrante |
 |:---|
-| Emmanuel Davezac | 
-| Agustín Vergara | 
-| Nicolás Villanueva | 
+| Emmanuel Davezac |
+| Agustín Vergara |
+| Nicolás Villanueva |
 
 ---
 
@@ -82,17 +82,39 @@ El archivo `.env` fue añadido al `.gitignore` para garantizar que nunca sea sub
 
 Se implementó **SQLite** como motor de base de datos. Se eligió este enfoque porque el propio backend gestiona la base de datos sin necesidad de un motor externo, siendo adecuado para fines de prueba. Para entornos de mayor tráfico o producción se recomienda migrar a **MySQL** o **PostgreSQL**.
 
-La tabla `users` contiene los siguientes atributos:
+La base de datos cuenta con tres tablas principales:
 
-| Campo | Descripción |
-|---|---|
-| `id` | Identificador único del usuario |
-| `name` | Nombre completo |
-| `email` | Correo electrónico (único) |
-| `password_hash` | Contraseña cifrada |
-| `role` | `Administrador`, `Profesor` o `Estudiante` |
-| `provider` | `email/password` o `google` |
-| `active` | Booleano para baja lógica |
+**Tabla `users`** — Almacena los usuarios del sistema.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `id` | TEXT | Identificador único del usuario |
+| `name` | TEXT | Nombre completo |
+| `email` | TEXT | Correo electrónico (único) |
+| `password_hash` | TEXT | Contraseña cifrada con bcrypt |
+| `role` | TEXT | `Administrador`, `Profesor` o `Estudiante` |
+| `provider` | TEXT | `credentials` o `google` |
+| `active` | INTEGER | `1` activo, `0` baja lógica |
+
+**Tabla `reset_tokens`** — Almacena tokens temporales para recuperación de contraseña.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `token` | TEXT | Token opaco único (UUID) |
+| `user_id` | TEXT | ID del usuario que solicitó el reset |
+| `expires_at` | INTEGER | Timestamp de expiración (1 hora) |
+
+**Tabla `login_logs`** — Registra cada inicio de sesión para auditoría.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `id` | INTEGER | Identificador autoincremental |
+| `user_id` | TEXT | ID del usuario que inició sesión |
+| `email` | TEXT | Correo utilizado |
+| `provider` | TEXT | `credentials` o `google` |
+| `ip` | TEXT | Dirección IP del cliente |
+| `user_agent` | TEXT | Navegador y sistema operativo |
+| `timestamp` | DATETIME | Fecha y hora del acceso |
 
 ##### Usuarios iniciales
 
@@ -143,6 +165,50 @@ La base de datos se inicializa con tres usuarios de prueba, todos con la contras
 - Al menos un carácter especial.
 
 ---
+
+### Justificación de Tecnologías y Decisiones de Seguridad
+ 
+Esta sección explica el razonamiento detrás de cada tecnología adoptada y cada decisión de seguridad tomada durante la implementación. 
+ 
+ 
+#### NextAuth para autenticación
+ 
+Se eligió NextAuth por ser la solución de autenticación estándar del ecosistema Next.js. Gestiona de forma segura el ciclo de vida de la sesión, la generación y validación de JWT, y la integración con proveedores externos como Google. Implementar este mecanismo desde cero hubiera introducido riesgos innecesarios: NextAuth está auditado por la comunidad y sigue las recomendaciones de OWASP para manejo de sesiones.
+ 
+Se optó por la estrategia **JWT** (en lugar de sesiones en base de datos) para evitar una consulta adicional por cada request.
+ 
+#### SQLite con better-sqlite3
+ 
+Se eligió **SQLite** por su simplicidad operativa: no requiere un servidor de base de datos separado, lo que reduce la superficie de ataque y simplifica el despliegue en un entorno de desarrollo académico. La librería `better-sqlite3` fue preferida sobre otras alternativas por ser sincrónica y no introducir condiciones de carrera, lo cual es importante cuando múltiples callbacks de NextAuth pueden ejecutarse en paralelo.
+ 
+Para producción, se recomienda migrar a **PostgreSQL** o **MySQL**, que ofrecen mejor soporte para concurrencia, backups y cifrado en reposo.
+ 
+#### bcrypt para el hash de contraseñas
+ 
+Las contraseñas nunca se almacenan en texto plano. Se utiliza **bcrypt** con un factor de costo de 10, lo que hace que cada hash tome aproximadamente 100ms en calcularse. Esto es intencional: dificulta los ataques de fuerza bruta y de diccionario, ya que un atacante que obtenga la base de datos no puede probar millones de contraseñas por segundo. MD5 y SHA-1 fueron descartados por ser inseguros para este propósito.
+ 
+#### Variables de entorno para secretos
+ 
+Ninguna credencial, API key ni secreto está hardcodeado en el código fuente. Todos se leen desde variables de entorno, siguiendo el principio de los [Twelve-Factor Apps](https://12factor.net/config). Esto garantiza que el repositorio pueda ser público sin exponer información sensible, y que cada entorno (desarrollo, staging, producción) pueda tener sus propios valores sin modificar el código.
+ 
+#### Baja lógica en lugar de eliminación física
+ 
+Cuando un administrador elimina un usuario, el registro no se borra de la base de datos: se marca como `active = 0`. Esta decisión tiene dos fundamentos. Primero, preserva la integridad referencial con la tabla `login_logs`, que contiene el historial de accesos del usuario. Segundo, permite auditar qué usuarios existieron en el sistema, lo cual es relevante en contextos donde se investigan incidentes de seguridad.
+ 
+#### Tokens opacos para recuperación de contraseña
+ 
+El mecanismo de reset de contraseña utiliza tokens opacos (aleatorios sin información intrínseca), en lugar de JWT firmados. Esta decisión es deliberada: un JWT podría ser decodificado por cualquiera para obtener el ID del usuario o la fecha de expiración. Un token opaco no revela ningún dato y solo tiene validez si existe en la base de datos, lo que permite revocarlo de forma inmediata una vez utilizado.
+ 
+#### Logging de accesos
+ 
+Se registra cada inicio de sesión con IP, user agent, proveedor y timestamp. Esto permite detectar patrones anómalos como múltiples intentos fallidos, accesos desde IPs inusuales o inicios de sesión en horarios fuera de lo normal. Es una práctica recomendada por estándares como ISO 27001 y NIST SP 800-92 para la gestión de logs de seguridad.
+ 
+#### Control de acceso por rol
+ 
+El control de acceso por rol garantiza que cada usuario solo pueda acceder a las funcionalidades que corresponden a su rol. Los estudiantes no pueden ver el panel de administración ni la lista de estudiantes; los profesores no pueden gestionar usuarios. Todos los endpoints verifican el rol del token JWT en el servidor antes de procesar cualquier solicitud, por lo que la restricción no depende únicamente del frontend.
+ 
+---
+
 
 ### Trabajo Futuro
 
