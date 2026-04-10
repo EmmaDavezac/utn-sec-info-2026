@@ -215,3 +215,5 @@ Elementos identificados que no pudieron implementarse por limitaciones de tiempo
 
 - Generación aleatoria de contraseñas para usuarios creados por administradores, sin que el administrador la conozca, o bien contraseñas de un solo uso.
 - Autenticación de doble factor (2FA) como opción para los usuarios.
+- Limitar la cantidad de peticiones al servidor para proteger de metodos de fuerza bruta y denegación de servicios.
+- Poner un periodo de enfriamiento o verificación vía captcha luego de varios intentos fallidos de inicio de sesión .
