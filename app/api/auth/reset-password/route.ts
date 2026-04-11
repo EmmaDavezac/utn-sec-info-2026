@@ -3,7 +3,6 @@ import { getResetToken, changePassword, deleteResetToken } from "@/app/lib/db";
 
 export async function POST(request: NextRequest) {
   try {
-    
     const { token, password } = await request.json();
 
     if (!token || !password) {
@@ -14,17 +13,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "La contraseña debe tener al menos 6 caracteres" }, { status: 400 });
     }
 
-    const resetData = getResetToken(token);
+    const resetData = await getResetToken(token);
     if (!resetData) {
       return NextResponse.json({ error: "Token inválido o expirado" }, { status: 400 });
     }
 
-    const success = changePassword(resetData.userId, password);
+    const success = await changePassword(resetData.userId, password);
     if (!success) {
       return NextResponse.json({ error: "Error al cambiar la contraseña" }, { status: 500 });
     }
 
-    deleteResetToken(token);
+    await deleteResetToken(token);
 
     return NextResponse.json({ message: "Contraseña restablecida exitosamente" });
   } catch (error) {
