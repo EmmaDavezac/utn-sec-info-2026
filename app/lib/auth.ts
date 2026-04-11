@@ -20,7 +20,7 @@ const providers: Provider[] = [
     async authorize(credentials, req) {
       if (!credentials?.email || !credentials.password) return null;
 
-      const user = getUserByEmail(credentials.email);
+      const user = await getUserByEmail(credentials.email);
       if (!user || !user.active) return null;
 
       const isValid = await bcrypt.compare(credentials.password, user.password_hash);
@@ -68,7 +68,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === "google" && user?.email) {
-        let existingUser = getUserByEmail(user.email);
+        let existingUser = await getUserByEmail(user.email);
 
         if (existingUser) {
           // Usuario ya existe — verificar que esté activo
@@ -80,7 +80,7 @@ export const authOptions: NextAuthOptions = {
             user.email,
             "Estudiante"
           );
-          existingUser = getUserByEmail(user.email);
+          existingUser = await getUserByEmail(user.email);
         }
 
         // Registrar log con el ID real de nuestra DB
@@ -105,7 +105,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger, session }) {
       // Trigger "update" — relee siempre de la DB
       if (trigger === "update") {
-        const dbUser = getUserByEmail(
+        const dbUser = await getUserByEmail(
           (session?.user?.email ?? token.email) as string
         );
         if (dbUser) {
@@ -119,7 +119,7 @@ export const authOptions: NextAuthOptions = {
 
       // Login inicial
       if (user) {
-        const dbUser = getUserByEmail(user.email as string);
+        const dbUser = await getUserByEmail(user.email as string);
         if (dbUser) {
           token.id = dbUser.id;
           token.role = dbUser.role;
@@ -133,7 +133,7 @@ export const authOptions: NextAuthOptions = {
 
       // Requests subsiguientes — refrescamos desde la DB
       if (token.email) {
-        const dbUser = getUserByEmail(token.email as string);
+        const dbUser = await getUserByEmail(token.email as string);
         if (dbUser) {
           token.id = dbUser.id;
           token.name = dbUser.name;

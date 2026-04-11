@@ -9,12 +9,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Todos los campos son obligatorios.' }, { status: 400 })
     }
 
-    const existingUser = getUserByEmail(email)
+    const existingUser = await getUserByEmail(email)
     if (existingUser) {
       return NextResponse.json({ error: 'El correo ya está en uso.' }, { status: 409 })
     }
 
-    const user = createUser(name.trim(), email.trim(), password)
+    const user = await createUser(name.trim(), email.trim(), password)
     return NextResponse.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role } }, { status: 201 })
   } catch (error) {
     console.error('Error registrando usuario:', error)

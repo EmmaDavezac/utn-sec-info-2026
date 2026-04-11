@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();
-    const user = getUserByEmail(email?.toLowerCase());
+    const user = await getUserByEmail(email?.toLowerCase());
 
     if (user) {
       const token = createResetToken(user.id);
