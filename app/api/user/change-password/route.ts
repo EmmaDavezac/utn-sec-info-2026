@@ -6,7 +6,6 @@ import { getUserById, verifyPassword, changePassword } from "@/app/lib/db";
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-
     if (!session || !session.user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
@@ -15,33 +14,21 @@ export async function POST(request: NextRequest) {
     const { currentPassword, newPassword } = await request.json();
 
     if (!currentPassword || !newPassword) {
-      return NextResponse.json(
-        { error: "Las contraseñas son requeridas" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Las contraseñas son requeridas" }, { status: 400 });
     }
 
-    const user = getUserById(userId);
+    const user = await getUserById(userId);
     if (!user) {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
     }
 
-    // Verify current password
     if (!verifyPassword(user.password_hash, currentPassword)) {
-      return NextResponse.json(
-        { error: "La contraseña actual es incorrecta" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "La contraseña actual es incorrecta" }, { status: 401 });
     }
 
-    // Change password
-    const success = changePassword(userId, newPassword);
-
+    const success = await changePassword(userId, newPassword);
     if (!success) {
-      return NextResponse.json(
-        { error: "No se pudo cambiar la contraseña" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No se pudo cambiar la contraseña" }, { status: 400 });
     }
 
     return NextResponse.json({ message: "Contraseña cambiada exitosamente" });
