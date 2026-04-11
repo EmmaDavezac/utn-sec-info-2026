@@ -21,7 +21,7 @@ export async function PATCH(request: NextRequest) {
     newPassword?: string;
   };
 
-  const user = getUserById(userId);
+  const user = await getUserById(userId);
   if (!user) {
     return NextResponse.json({ error: "Usuario no encontrado." }, { status: 404 });
   }
@@ -30,7 +30,7 @@ export async function PATCH(request: NextRequest) {
 
   if (name || email) {
     try {
-      const updatedUser = updateUser(userId, { name, email });
+      const updatedUser = await updateUser(userId, { name, email });
       if (!updatedUser) {
         return NextResponse.json({ error: "No se pudo actualizar el perfil." }, { status: 400 });
       }
@@ -54,6 +54,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const isGoogleUser = user.provider === "google";
+
     if (!currentPassword?.trim() && !isGoogleUser) {
       return NextResponse.json(
         { error: "Debes proporcionar tu contraseña actual para cambiar la contraseña." },
@@ -68,7 +69,7 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    const updated = updateUserPassword(userId, newPassword);
+    const updated = await updateUserPassword(userId, newPassword);
     if (!updated) {
       return NextResponse.json({ error: "No se pudo actualizar la contraseña." }, { status: 400 });
     }
