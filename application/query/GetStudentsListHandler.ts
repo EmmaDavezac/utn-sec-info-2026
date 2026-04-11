@@ -3,7 +3,7 @@ import { getStudentsByRole } from '@/app/lib/db'
 export class GetStudentsListHandler {
 
     async handle(): Promise<GetStudentsListResponse> {
-        const students = getStudentsByRole('Estudiante')
+        const students = await getStudentsByRole('Estudiante')
 
         const response = students.map((student) => ({
             id: student.id,
