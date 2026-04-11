@@ -12,6 +12,7 @@ async function getDb() {
 }
 
 export async function initDb() {
+  if (!process.env.DATABASE_URL) return;
   const client = await pool.connect();
   try {
     await client.query(`

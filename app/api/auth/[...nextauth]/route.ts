@@ -2,10 +2,13 @@ import NextAuth from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import { initDb } from "@/app/lib/db";
 
-const initPromise = initDb();
+let initialized = false;
 
 async function handler(req: Request, ctx: unknown) {
-  await initPromise;
+  if (!initialized) {
+    await initDb();
+    initialized = true;
+  }
   const nextAuthHandler = NextAuth(authOptions);
   return nextAuthHandler(req, ctx);
 }
