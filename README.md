@@ -217,3 +217,71 @@ Elementos identificados que no pudieron implementarse por limitaciones de tiempo
 - Autenticación de doble factor (2FA) como opción para los usuarios.
 - Limitar la cantidad de peticiones al servidor para proteger de metodos de fuerza bruta y denegación de servicios.
 - Poner un periodo de enfriamiento o verificación vía captcha luego de varios intentos fallidos de inicio de sesión .
+
+## Entrega 2 — Fecha: 17/04
+
+**Requerimiento Técnico:** Configuración WAF Rules
+
+**Conceptos Clave:** Diseñar e implementar al menos 3 reglas de Firewall en Vercel.
+
+---
+
+### Resolución
+
+## Criterio de Selección de Reglas
+
+Las reglas implementadas fueron seleccionadas considerando las caracteristicas de la aplicación y cuales reglas son indespensables en la actualidad . Se priorizaron tres vectores de ataque principales:
+
+- **Abuso del servicio de IA:** Un endpoint que consume una API 
+  externa de LLM representa un costo económico real por cada request. 
+  Sin rate limiting, un atacante puede agotar la cuota o generar gastos elevados sin necesidad de explotar ninguna vulnerabilidad de código.
+
+- **Reconocimiento automatizado:** La mayoría de los ataques reales comienzan con una fase de escaneo automatizado. Bloquear herramientas conocidas de pentesting  y bots sin User-Agent en una etapa temprana reduce drásticamente la superficie expuesta antes de que el atacante identifique vulnerabilidades explotables.
+
+- **Inyección en URL** son unas de las vulnerabilidades mas explotadas. Debemos interceptar el ataque antes de que el request llegue al servidor, esto agrega una capa de defensa independiente del código.
+
+
+
+#### Reglas de Firewall Implementadas
+ 
+##### Regla 1 — Rate Limit en API 
+ 
+**Nombre:** Rate Limit API Endpoints  
+**Acción:** Deny 429 (Too Many Requests)
+ 
+**Descripción:**  
+Limita la cantidad de requests que una misma IP puede realizar al conjunto de endpoints `/api/` a un máximo de 30 solicitudes cada 60 segundos. Esta regla es crítica en una aplicación que integra un proveedor de LLM externo, ya que sin ella cualquier hacker podría generar un ataque masivo de llamadas a la IA, ocasionando costos económicos elevados o dejando el servicio inaccesible.
+Protege de ataquees DOS.
+
+---
+
+### Regla 2 — Bloquear Scanner Bots y User-Agent Vacío
+ 
+**Nombre:** Block Scanner Bots  
+**Acción:** Deny 404 (Not Found)
+ 
+**Descripción:**  
+Bloquea herramientas de pentesting automático y scanners que buscan vulnerabilidades, detectándolos por su User-Agent característico. Adicionalmente bloquea requests con User-Agent vacío, ya que los navegadores legítimos siempre se identifican. Responder con 404 en lugar de 403 evita revelar la existencia del firewall al atacante.
+ 
+**Condiciones aplicadas:**
+ 
+| Condición | Valor | Tipo de herramienta |
+|-----------|-------|---------------------|
+| User Agent Contains | `sqlmap` | Inyección SQL automatizada |
+| User Agent Contains | `nikto` | Scanner de vulnerabilidades web |
+| User Agent Contains | `nmap` | Scanner de puertos y servicios |
+| User Agent Contains | `masscan` | Scanner masivo de puertos |
+| User Agent Equals | `""` | Bot sin identificación |
+ 
+---
+
+### Regla 3 — Bloquear Inyección en URL 
+ 
+**Nombre:** Block SQL and Script Injection in URL  
+**Acción:** Deny 403 (Forbidden)
+ 
+**Descripción:**  
+Esta regla intercepta y bloquea requests cuya URL contenga patrones característicos de ataques de inyección antes de que lleguen al servidor. Se detectan keywords de SQL Injection (`select`, `union`) en formato URL-encoded, intentos de Cross-Site Scripting (`<script>`, `javascript:`) y secuencias de Path Traversal (`../`) usadas para escapar del directorio raíz del servidor y acceder a archivos del sistema operativo.
+ 
+---
+
