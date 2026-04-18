@@ -1,5 +1,5 @@
 name: Semgrep
-
+#Linea nueva para que haya al menos un cambio en el main y se active el workflow
 on:
   pull_request:
     branches: ["main"]
