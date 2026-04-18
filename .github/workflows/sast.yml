@@ -1,0 +1,24 @@
+name: "Security Scan - Secure Campus"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  semgrep:
+    name: Semgrep Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        run: |
+          docker run --rm -v $(pwd):/src returntocorp/semgrep semgrep scan \
+          --config="p/nextjs" \
+          --config="p/react" \
+          --config="p/javascript" \
+          --config="p/owasp-top-10" \
+          --error
