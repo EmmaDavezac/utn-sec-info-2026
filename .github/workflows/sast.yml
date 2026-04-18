@@ -1,20 +1,29 @@
 name: Semgrep
+
 on:
-  push:
-    branches: ["main"]
   pull_request:
     branches: ["main"]
+    # Se recomienda añadir estos tipos para que se reactive si el PR cambia
+    types: [opened, synchronize, reopened]
 
 jobs:
   semgrep:
     name: Scan
     runs-on: ubuntu-latest
+    # Se añaden permisos necesarios para que Semgrep pueda escribir en el PR
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # Crucial: Semgrep necesita el historial para comparar ramas
+          fetch-depth: 0
 
       - name: Run Semgrep
-        # Usamos la acción oficial que ya tiene todo instalado
         uses: returntocorp/semgrep-action@v1
         with:
           config: >-
@@ -22,5 +31,6 @@ jobs:
             p/nextjs
             p/react
         env:
-          # Esto hace que el pipeline falle si hay errores de seguridad
+          # Indica a Semgrep que solo analice los cambios del PR
+          SEMGREP_PR_ID: ${{ github.event.number }}
           SEMGREP_FAIL_ON_ERROR: "1"
