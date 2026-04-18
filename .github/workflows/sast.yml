@@ -1,24 +1,26 @@
-name: "Security Scan - Secure Campus"
-
+name: Semgrep
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   semgrep:
-    name: Semgrep Analysis
+    name: Scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Security Scan
-        run: |
-          semgrep scan \
-            --config="p/default" \
-            --config="p/nextjs" \
-            --config="p/react" \
-            --error \
-            --text
+      - name: Run Semgrep
+        # Usamos la acción oficial que ya tiene todo instalado
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/default
+            p/nextjs
+            p/react
+        env:
+          # Esto hace que el pipeline falle si hay errores de seguridad
+          SEMGREP_FAIL_ON_ERROR: "1"
