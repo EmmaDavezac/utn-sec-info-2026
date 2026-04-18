@@ -14,11 +14,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run Semgrep
+      - name: Security Scan
         run: |
-          docker run --rm -v $(pwd):/src returntocorp/semgrep semgrep scan \
-          --config="p/nextjs" \
-          --config="p/react" \
-          --config="p/javascript" \
-          --config="p/owasp-top-10" \
-          --error
+          semgrep scan \
+            --config="p/default" \
+            --config="p/nextjs" \
+            --config="p/react" \
+            --error \
+            --text
