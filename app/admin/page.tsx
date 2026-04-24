@@ -8,6 +8,7 @@ export default async function AdminPage() {
 
   if (!session) {
     redirect("/auth")
+    console.log("test")
   }
 
   const role = ((session.user as any)?.role as string | undefined)?.trim().toLowerCase() ?? ""
