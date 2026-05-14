@@ -63,6 +63,14 @@ export class PromptSecurityValidator {
   };
 
   /**
+   * Obtiene la severidad máxima entre dos niveles
+   */
+  private static getMaxSeverity(a: 'low' | 'medium' | 'high' | 'critical', b: 'low' | 'medium' | 'high' | 'critical'): 'low' | 'medium' | 'high' | 'critical' {
+    const hierarchy = { low: 0, medium: 1, high: 2, critical: 3 };
+    return hierarchy[a] >= hierarchy[b] ? a : b;
+  }
+
+  /**
    * Valida entrada de usuario completa
    */
   static validateUserInput(message: string): ValidationResult {
@@ -104,14 +112,14 @@ export class PromptSecurityValidator {
     const structureCheck = this.validateMessageStructure(message);
     if (!structureCheck.isValid) {
       threats.push(...structureCheck.issues);
-      severity = Math.max(severity, 'medium') as any;
+      severity = this.getMaxSeverity(severity, 'medium');
     }
 
     // 6. Detectar URLs sospechosas
     const urlCheck = this.validateUrls(message);
     if (!urlCheck.isValid) {
       threats.push(...urlCheck.issues);
-      severity = Math.max(severity, 'medium') as any;
+      severity = this.getMaxSeverity(severity, 'medium');
     }
 
     const isValid = threats.length === 0;

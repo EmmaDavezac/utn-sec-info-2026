@@ -53,10 +53,25 @@ export class SecurityLogger {
             ? 'warn'
             : 'log';
 
-    console[logLevel as any](
-      `[${severity}] ${action}`,
-      JSON.stringify({ ...entry, details }, null, 2)
-    );
+    switch (logLevel) {
+      case 'error':
+        console.error(
+          `[${severity}] ${action}`,
+          JSON.stringify({ ...entry, details }, null, 2)
+        );
+        break;
+      case 'warn':
+        console.warn(
+          `[${severity}] ${action}`,
+          JSON.stringify({ ...entry, details }, null, 2)
+        );
+        break;
+      default:
+        console.log(
+          `[${severity}] ${action}`,
+          JSON.stringify({ ...entry, details }, null, 2)
+        );
+    }
 
     // Mantener historial limitado (últimas 1000 entradas)
     if (this.auditLogs.length > 1000) {
