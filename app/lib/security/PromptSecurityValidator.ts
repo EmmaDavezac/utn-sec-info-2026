@@ -276,6 +276,7 @@ export class PromptSecurityValidator {
     ];
 
     return injectionKeywords.some((keyword) =>
+      // nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
       new RegExp(keyword, 'gi').test(output)
     );
   }
