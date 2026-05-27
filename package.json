@@ -9,31 +9,22 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.10.3",
+    "@clerk/nextjs": "^7.0.12",
     "@supabase/supabase-js": "^2.106.1",
-    "bcryptjs": "^3.0.3",
-    "dotenv": "^17.3.1",
     "groq-sdk": "^1.1.1",
-    "lucide-react": "^1.7.0",
+    "lucide-react": "^1.16.0",
     "next": "16.2.0",
-    "next-auth": "^4.24.13",
-    "nodemailer": "^7.0.13",
-    "pg": "^8.20.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
-    "@types/nodemailer": "^8.0.0",
-    "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.0",
-    "prisma": "^7.8.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

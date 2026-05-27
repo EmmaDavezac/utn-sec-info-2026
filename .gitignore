@@ -39,10 +39,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# Base de datos
-
-!data/.gitkeep
-resolve-conflicts.js
-
-/app/generated/prisma
