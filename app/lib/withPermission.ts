@@ -9,10 +9,12 @@ export interface UserInfo {
     jwt: string | null
 }
 
-type PermissionedHandler = (request: NextRequest, userInfo: UserInfo, context: unknown) => Promise<NextResponse> | NextResponse;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type PermissionedHandler = (request: NextRequest, userInfo: UserInfo, context: any) => Promise<NextResponse> | NextResponse;
 
 export function withPermission(permission: PERMISSION, handler: PermissionedHandler) {
-    return async (request: NextRequest, context: unknown): Promise<NextResponse> => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return async (request: NextRequest, context: any): Promise<NextResponse> => {
         try {
             const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
             if (!token) {
