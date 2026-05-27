@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
-import { currentUser } from "@clerk/nextjs/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/lib/auth";
+import { Providers } from "@/app/providers";
 import SessionInitializer from "@/app/store/SessionInitializer";
 import { UserSession } from "@/app/store/session";
 import { Header } from "@/app/Header";
@@ -27,21 +28,22 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // 1. Obtenemos el usuario activo directo desde el servidor con Clerk
-  const clerkUser = await currentUser();
+  // 1. Obtenemos el usuario activo directo desde el servidor con NextAuth
+  const session = await getServerSession(authOptions);
 
   // 2. Formateamos la data para que coincida con tu interface UserSession de Zustand
-  const userSession: UserSession | null = clerkUser ? {
-    id: clerkUser.id,
-    firstName: clerkUser.firstName,
-    lastName: clerkUser.lastName,
-    email: clerkUser.emailAddresses[0]?.emailAddress,
-    imageUrl: clerkUser.imageUrl,
-    role: (clerkUser.publicMetadata?.role as string) ?? 'student',
+  const user = session?.user as { id?: string; image?: string; role?: string; name?: string; email?: string } | undefined;
+  const userSession: UserSession | null = user ? {
+    id: user.id ?? "",
+    firstName: user.name?.split(" ")[0] ?? "",
+    lastName: user.name?.split(" ").slice(1).join(" ") ?? "",
+    email: user.email ?? undefined,
+    imageUrl: user.image ?? "",
+    role: user.role?.toLowerCase() === "administrador" ? "admin" : "student",
   } : null;
 
   return (
-    <ClerkProvider signInUrl="/" signUpUrl="/">
+    <Providers session={session}>
       <html
         lang="en"
         className={`${geistSans.variable} ${geistMono.variable} h-[100dvh] antialiased overflow-hidden`}
@@ -55,6 +57,6 @@ export default async function RootLayout({
           </main>
         </body>
       </html>
-    </ClerkProvider>
+    </Providers>
   );
 }

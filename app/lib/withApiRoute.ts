@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getToken } from 'next-auth/jwt';
 
 type ApiRouteHandler = (request: NextRequest, userId: string) => Promise<NextResponse> | NextResponse;
 
@@ -9,16 +9,18 @@ type ApiRouteHandler = (request: NextRequest, userId: string) => Promise<NextRes
  */
 export function withApiRoute(handler: ApiRouteHandler) {
     // Retornamos la firma estándar que espera Next.js para un Route Handler
-    return async (request: NextRequest, context: any): Promise<NextResponse> => {
+    return async (request: NextRequest): Promise<NextResponse> => {
         try {
-            const { userId } = await auth();
+            const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
             
-            if (!userId) {
+            if (!token) {
                 return NextResponse.json(
                     { error: "No autorizado. Inicia sesión para continuar." },
                     { status: 401 }
                 );
             }
+
+            const userId = token.id as string;
 
             // Ejecutamos la lógica de negocio inyectando el userId extraído
             return await handler(request, userId);

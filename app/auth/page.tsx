@@ -58,7 +58,7 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (isMounted && status === "authenticated") {
-      router.replace("/chat");
+      router.replace("/");
     }
   }, [status, router, isMounted]);
 
@@ -88,7 +88,7 @@ export default function AuthPage() {
       return;
     }
 
-    router.push("/chat");
+    router.push("/");
   };
 
  const handleRegister = async (event: FormEvent) => {
@@ -271,7 +271,7 @@ export default function AuthPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => signIn("google", { callbackUrl: "/chat" })}
+                      onClick={() => signIn("google", { callbackUrl: "/" })}
                       className="w-full rounded-2xl border border-zinc-900 bg-white text-zinc-900 py-3 text-sm font-semibold hover:bg-zinc-50 transition-colors dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                     >
                       Iniciar sesión con Google

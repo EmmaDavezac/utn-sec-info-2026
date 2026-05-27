@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { getToken } from 'next-auth/jwt';
 import { PERMISSION, PERMISSIONS_BY_ROLE } from '@/domain/identity/permissions';
 
 export interface UserInfo {
@@ -9,21 +9,24 @@ export interface UserInfo {
     jwt: string | null
 }
 
-type PermissionedHandler = (request: NextRequest, userInfo: UserInfo, context: any) => Promise<NextResponse> | NextResponse;
+type PermissionedHandler = (request: NextRequest, userInfo: UserInfo, context: unknown) => Promise<NextResponse> | NextResponse;
 
 export function withPermission(permission: PERMISSION, handler: PermissionedHandler) {
-    return async (request: NextRequest, context: any): Promise<NextResponse> => {
+    return async (request: NextRequest, context: unknown): Promise<NextResponse> => {
         try {
-            const { userId } = await auth();
-            if (!userId) {
+            const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+            if (!token) {
                 return NextResponse.json(
                     { error: 'No autorizado. Inicia sesión para continuar.' },
                     { status: 401 }
                 );
             }
 
-            const user = await currentUser();
-            const role = (user?.publicMetadata?.role as string) ?? null;
+            const userId = token.id as string;
+            const email = token.email as string ?? null;
+            const rawRole = (token.role as string) ?? 'Estudiante';
+            const role = rawRole.toLowerCase() === 'administrador' ? 'admin' : 'student';
+
             const hasPermission = !!role && PERMISSIONS_BY_ROLE.some(
                 p => p.role === role && p.permission === permission
             );
@@ -34,10 +37,7 @@ export function withPermission(permission: PERMISSION, handler: PermissionedHand
                 );
             }
 
-            const email = user?.emailAddresses?.[0]?.emailAddress ?? null;
-            const { getToken } = await auth();
-            const jwt = await getToken();
-            const userInfo: UserInfo = { userId, role, email, jwt }
+            const userInfo: UserInfo = { userId, role, email, jwt: null };
 
             return await handler(request, userInfo, context);
         } catch (error) {
