@@ -37,7 +37,7 @@ export function Header() {
     if (status === "authenticated" && session?.user) {
       const u = session.user as { id?: string; role?: string; name?: string; email?: string; image?: string };
       const rawRole = u.role ?? "Estudiante";
-      const role = rawRole.toLowerCase() === "administrador" ? "admin" : "student";
+      const role = rawRole.toLowerCase() === "administrador" ? "admin" : (rawRole.toLowerCase() === "profesor" ? "profesor" : "estudiante");
       
       if (u.id !== user?.id || user?.role !== role) {
         setUser({
@@ -86,6 +86,9 @@ export function Header() {
             </Guard>
             <Guard permission={PERMISSION.STUDENTS_LIST}>
               <NavLink href="/students">Estudiantes</NavLink>
+            </Guard>
+            <Guard permission={PERMISSION.ADMIN_PANEL}>
+              <NavLink href="/admin">Administración</NavLink>
             </Guard>
           </nav>
         )}

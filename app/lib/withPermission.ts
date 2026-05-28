@@ -27,7 +27,7 @@ export function withPermission(permission: PERMISSION, handler: PermissionedHand
             const userId = token.id as string;
             const email = token.email as string ?? null;
             const rawRole = (token.role as string) ?? 'Estudiante';
-            const role = rawRole.toLowerCase() === 'administrador' ? 'admin' : 'student';
+            const role = rawRole.toLowerCase() === 'administrador' ? 'admin' : (rawRole.toLowerCase() === 'profesor' ? 'profesor' : 'estudiante');
 
             const hasPermission = !!role && PERMISSIONS_BY_ROLE.some(
                 p => p.role === role && p.permission === permission

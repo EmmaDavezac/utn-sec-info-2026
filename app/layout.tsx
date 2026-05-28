@@ -39,7 +39,7 @@ export default async function RootLayout({
     lastName: user.name?.split(" ").slice(1).join(" ") ?? "",
     email: user.email ?? undefined,
     imageUrl: user.image ?? "",
-    role: user.role?.toLowerCase() === "administrador" ? "admin" : "student",
+    role: user.role?.toLowerCase() === "administrador" ? "admin" : (user.role?.toLowerCase() === "profesor" ? "profesor" : "estudiante"),
   } : null;
 
   return (
