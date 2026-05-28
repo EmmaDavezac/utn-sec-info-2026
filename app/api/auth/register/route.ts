@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createUser, getUserByEmail, checkDniExists } from '@/app/lib/db'
+import { SqlInjectionGuard } from '@/app/lib/security/SqlInjectionGuard'
 
 export async function POST(request: NextRequest) {
   try {
@@ -7,6 +8,16 @@ export async function POST(request: NextRequest) {
 
     if (!name?.trim() || !email?.trim() || !password?.trim() || !dni?.trim()) {
       return NextResponse.json({ error: 'Todos los campos son obligatorios.' }, { status: 400 })
+    }
+
+    // Validación SQL Injection a nivel de aplicación
+    const nameVal = SqlInjectionGuard.validateInput(name, 'name', email)
+    const emailVal = SqlInjectionGuard.validateInput(email, 'email', email)
+    if (!nameVal.isValid || !emailVal.isValid) {
+      return NextResponse.json(
+        { error: 'Entrada rechazada debido a patrones de consulta no permitidos.' },
+        { status: 400 }
+      )
     }
 
     const dniRegex = /^\d{7,8}$/

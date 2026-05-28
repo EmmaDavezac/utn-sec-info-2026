@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth/next";
 import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "@/app/lib/auth";
 import { updateUser, getUserById, verifyPassword, changePassword } from "@/app/lib/db";
+import { SqlInjectionGuard } from "@/app/lib/security/SqlInjectionGuard";
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -41,6 +42,16 @@ export async function PATCH(request: NextRequest) {
     const { name, email } = body;
     if (!name?.trim() || !email?.trim()) {
       return NextResponse.json({ error: "Nombre y email son requeridos" }, { status: 400 });
+    }
+
+    // Validación SQL Injection a nivel de aplicación
+    const nameVal = SqlInjectionGuard.validateInput(name, 'name', session.user.email ?? userId)
+    const emailVal = SqlInjectionGuard.validateInput(email, 'email', session.user.email ?? userId)
+    if (!nameVal.isValid || !emailVal.isValid) {
+      return NextResponse.json(
+        { error: "Entrada rechazada debido a patrones de consulta no permitidos." },
+        { status: 400 }
+      );
     }
 
     const updated = await updateUser(userId, { name: name.trim(), email: email.trim() });
