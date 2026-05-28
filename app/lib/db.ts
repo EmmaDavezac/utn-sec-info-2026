@@ -145,6 +145,12 @@ export async function updateUser(
   const existing = await getUserById(id);
   if (!existing) return null;
 
+  if (typeof updates.role === "string") {
+    if (existing.role !== updates.role) {
+      throw new Error("No está permitido modificar el rol de un usuario ya creado.");
+    }
+  }
+
   const fields: string[] = [];
   const params: Array<string | boolean | number> = [];
   let idx = 1;
@@ -183,7 +189,18 @@ export async function updateUser(
     await getPool().query(`UPDATE users SET ${fields.join(", ")} WHERE id = $${idx}`, params);
   }
 
-  return getPublicUserById(id);
+  const updatedUser = await getPublicUserById(id);
+
+  if (updatedUser && updatedUser.role === "Estudiante") {
+    await syncStudentUpdate(
+      existing.email,
+      updatedUser.name,
+      updatedUser.email,
+      !!updatedUser.active
+    );
+  }
+
+  return updatedUser;
 }
 
 export async function updateUserPassword(id: string, newPassword: string): Promise<boolean> {
@@ -195,17 +212,42 @@ export async function updateUserPassword(id: string, newPassword: string): Promi
 }
 
 export async function deleteUser(id: string): Promise<boolean> {
+  const existing = await getUserById(id);
+  if (!existing) return false;
+
   const { rowCount } = await getPool().query("UPDATE users SET active = 0 WHERE id = $1", [id]);
-  return (rowCount ?? 0) > 0;
+  if ((rowCount ?? 0) > 0) {
+    if (existing.role === "Estudiante") {
+      await syncStudentUpdate(existing.email, existing.name, existing.email, false);
+    }
+    return true;
+  }
+  return false;
 }
 
-export async function createUser(name: string, email: string, password: string, role = "Estudiante") {
+export async function createUser(name: string, email: string, password: string, role = "Estudiante", dni?: string) {
   const passwordHash = bcrypt.hashSync(password, 10);
   const id = crypto.randomUUID();
   await getPool().query(
     "INSERT INTO users (id, name, email, password_hash, role, provider, active) VALUES ($1, $2, $3, $4, $5, $6, $7)",
     [id, name.trim(), email.toLowerCase(), passwordHash, role, "credentials", 1]
   );
+
+  if (role === "Estudiante") {
+    const encryptionKey = process.env.DB_ENCRYPTION_KEY || 'DEMO_KEY_CHANGE_IN_PRODUCTION_12345';
+    if (dni) {
+      await getPool().query(
+        "INSERT INTO students (name, email, active, dni_encrypted) VALUES ($1, $2, $3, encrypt_dni($4, $5)) ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, active = EXCLUDED.active, dni_encrypted = EXCLUDED.dni_encrypted",
+        [name.trim(), email.toLowerCase(), true, dni.trim(), encryptionKey]
+      );
+    } else {
+      await getPool().query(
+        "INSERT INTO students (name, email, active, dni_encrypted) VALUES ($1, $2, $3, NULL) ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, active = EXCLUDED.active",
+        [name.trim(), email.toLowerCase(), true]
+      );
+    }
+  }
+
   return { id, name: name.trim(), email: email.toLowerCase(), role };
 }
 
@@ -217,6 +259,14 @@ export async function createOAuthUser(name: string, email: string, role = "Estud
     "INSERT INTO users (id, name, email, password_hash, role, provider, active) VALUES ($1, $2, $3, $4, $5, $6, $7)",
     [id, name.trim(), email.toLowerCase(), passwordHash, role, "google", 1]
   );
+
+  if (role === "Estudiante") {
+    await getPool().query(
+      "INSERT INTO students (name, email, active, dni_encrypted) VALUES ($1, $2, $3, NULL) ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, active = EXCLUDED.active",
+      [name.trim(), email.toLowerCase(), true]
+    );
+  }
+
   return { id, name: name.trim(), email: email.toLowerCase(), role };
 }
 
@@ -269,4 +319,43 @@ export async function saveLoginLog(data: {
 export async function getRecentLogs(limit = 50) {
   const { rows } = await getPool().query("SELECT * FROM login_logs ORDER BY timestamp DESC LIMIT $1", [limit]);
   return rows;
+}
+
+export async function checkDniExists(dni: string): Promise<boolean> {
+  const encryptionKey = process.env.DB_ENCRYPTION_KEY || 'DEMO_KEY_CHANGE_IN_PRODUCTION_12345';
+  const { rows } = await getPool().query(
+    "SELECT id FROM students WHERE decrypt_dni(dni_encrypted, $1) = $2",
+    [encryptionKey, dni.trim()]
+  );
+  return rows.length > 0;
+}
+
+export async function syncStudentUpdate(previousEmail: string, name: string, email: string, active: boolean) {
+  // Update existing student by previous email
+  const { rowCount } = await getPool().query(
+    "UPDATE students SET name = $1, email = $2, active = $3 WHERE email = $4",
+    [name.trim(), email.toLowerCase(), active, previousEmail.toLowerCase()]
+  );
+  // If student row doesn't exist, insert it
+  if ((rowCount ?? 0) === 0) {
+    await getPool().query(
+      "INSERT INTO students (name, email, active, dni_encrypted) VALUES ($1, $2, $3, NULL) ON CONFLICT (email) DO NOTHING",
+      [name.trim(), email.toLowerCase(), active]
+    );
+  }
+}
+
+export async function userNeedsOnboarding(email: string, role: string): Promise<boolean> {
+  const normalizedRole = (role ?? '').trim().toLowerCase();
+  if (normalizedRole !== "estudiante" && normalizedRole !== "student") {
+    return false;
+  }
+  const { rows } = await getPool().query(
+    "SELECT dni_encrypted FROM students WHERE email = $1",
+    [email.toLowerCase()]
+  );
+  if (rows.length === 0) {
+    return true;
+  }
+  return rows[0].dni_encrypted === null;
 }

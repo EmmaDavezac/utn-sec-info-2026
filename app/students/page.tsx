@@ -13,6 +13,7 @@ export default function StudentsPage() {
   const { fetchStudents, editStudentDetail } = useStudents()
   const { students } = useStudentsStore()
   const [isLoading, setIsLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
 
   useEffect(() => {
     const loadStudents = async () => {
@@ -27,17 +28,38 @@ export default function StudentsPage() {
     loadStudents()
   }, [])
 
+  const filteredStudents = students.filter(student => 
+    student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (student.email && student.email.toLowerCase().includes(searchQuery.toLowerCase()))
+  )
+
   return (
     <Guard permission={PERMISSION.STUDENTS_LIST} fallback={<Unauthorized />}>
       <main className="flex flex-col flex-1 items-center bg-zinc-50 font-sans dark:bg-zinc-950 h-full w-full overflow-hidden">
         <div className="flex flex-col w-full max-w-4xl flex-1 bg-white dark:bg-zinc-900/50 shadow-sm border-x border-zinc-200 dark:border-zinc-800 overflow-hidden">
-          <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-              Listado de Estudiantes
-            </h2>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-              Esta es la lista de estudiantes actualmente en el sistema.
-            </p>
+          <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 space-y-4">
+            <div>
+              <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+                Listado de Estudiantes
+              </h2>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                Esta es la lista de estudiantes actualmente en el sistema.
+              </p>
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar estudiante por nombre o correo..."
+                className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950 px-5 py-3 pl-11 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-500 transition-all"
+              />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637z" />
+                </svg>
+              </div>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto">
@@ -49,13 +71,13 @@ export default function StudentsPage() {
                 </svg>
                 Cargando estudiantes...
               </div>
-            ) : students.length === 0 ? (
+            ) : filteredStudents.length === 0 ? (
               <div className="flex items-center justify-center h-full text-zinc-500 dark:text-zinc-400">
                 No se encontraron estudiantes.
               </div>
             ) : (
               <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                {students.map((student: Student) => (
+                {filteredStudents.map((student: Student) => (
                   <li key={student.id} className="p-4 sm:p-6 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
                     <div className="flex items-center gap-4">
                       <div className="flex-shrink-0 h-12 w-12 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center">

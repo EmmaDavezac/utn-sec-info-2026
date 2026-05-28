@@ -6,6 +6,7 @@ import { Providers } from "@/app/providers";
 import SessionInitializer from "@/app/store/SessionInitializer";
 import { UserSession } from "@/app/store/session";
 import { Header } from "@/app/Header";
+import { OnboardingWrapper } from "@/app/components/OnboardingWrapper";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -52,9 +53,10 @@ export default async function RootLayout({
           {/* 3. Inyectamos la sesión inicial en el store de Zustand */}
           <SessionInitializer user={userSession} />
           <Header />
-          <main className="flex-1 overflow-hidden">
+          <main className="flex-1 overflow-y-auto">
             {children}
           </main>
+          <OnboardingWrapper />
         </body>
       </html>
     </Providers>

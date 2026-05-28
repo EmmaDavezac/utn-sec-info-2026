@@ -123,14 +123,9 @@ export default function ProfilePage() {
       return;
     }
 
-    // 2. Validar fuerza de la contraseña (Regex)
-    // Criterios: 8+ caracteres, 1 Mayus, 1 Número, 1 Caracter Especial
-    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    
-    if (!strongPasswordRegex.test(newPassword)) {
-      setPasswordError(
-        "La contraseña debe tener al menos 8 caracteres, incluir una mayúscula, un número y un carácter especial (@$!%*?&)."
-      );
+    // 2. Validar longitud de la contraseña
+    if (newPassword.length < 8) {
+      setPasswordError("La contraseña debe tener al menos 8 caracteres.");
       return;
     }
 
@@ -175,7 +170,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="flex-1 bg-zinc-50 dark:bg-zinc-950 px-4 py-10">
+    <main className="flex-1 bg-zinc-50 dark:bg-zinc-950 px-4 py-10 overflow-y-auto">
       <div className="mx-auto w-full max-w-2xl space-y-6">
         
         {/* Encabezado */}
@@ -270,7 +265,7 @@ export default function ProfilePage() {
               <PasswordInput label="Contraseña actual" value={currentPassword} onChange={setCurrentPassword} required />
               <PasswordInput label="Nueva contraseña" value={newPassword} onChange={setNewPassword} required />
               <small className="text-xs text-zinc-500 dark:text-zinc-400 block">
-                La contraseña debe tener al menos 8 caracteres, incluir una mayúscula, un número y un carácter especial.
+                La contraseña debe tener al menos 8 caracteres.
               </small>
               <PasswordInput label="Confirmar nueva contraseña" value={confirmPassword} onChange={setConfirmPassword} required />
 
