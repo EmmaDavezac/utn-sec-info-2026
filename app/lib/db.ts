@@ -359,3 +359,17 @@ export async function userNeedsOnboarding(email: string, role: string): Promise<
   }
   return rows[0].dni_encrypted === null;
 }
+
+export async function saveStudentDni(email: string, name: string, dni: string): Promise<void> {
+  const encryptionKey = process.env.DB_ENCRYPTION_KEY || 'DEMO_KEY_CHANGE_IN_PRODUCTION_12345';
+  const { rowCount } = await getPool().query(
+    "UPDATE students SET name = $1, dni_encrypted = encrypt_dni($2, $3) WHERE email = $4",
+    [name.trim(), dni.trim(), encryptionKey, email.toLowerCase()]
+  );
+  if ((rowCount ?? 0) === 0) {
+    await getPool().query(
+      "INSERT INTO students (name, email, active, dni_encrypted) VALUES ($1, $2, $3, encrypt_dni($4, $5))",
+      [name.trim(), email.toLowerCase(), true, dni.trim(), encryptionKey]
+    );
+  }
+}

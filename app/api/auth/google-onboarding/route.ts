@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "@/app/lib/auth";
-import { updateUser, checkDniExists, getPool } from "@/app/lib/db";
+import { updateUser, checkDniExists, saveStudentDni } from "@/app/lib/db";
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +21,9 @@ export async function POST(request: NextRequest) {
     }
 
     const userEmail = session.user.email;
+    if (!userEmail) {
+      return NextResponse.json({ error: "No se pudo obtener el email del usuario." }, { status: 400 });
+    }
     const userId = (session.user as any).id;
 
     // Check DNI duplicates
@@ -29,19 +32,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "El DNI ya está registrado en el sistema." }, { status: 409 });
     }
 
-    const encryptionKey = process.env.DB_ENCRYPTION_KEY || 'DEMO_KEY_CHANGE_IN_PRODUCTION_12345';
-
     // Ensure student record exists and update it
-    const { rowCount } = await getPool().query(
-      "UPDATE students SET name = $1, dni_encrypted = encrypt_dni($2, $3) WHERE email = $4",
-      [name.trim(), dni.trim(), encryptionKey, userEmail.toLowerCase()]
-    );
-    if ((rowCount ?? 0) === 0) {
-      await getPool().query(
-        "INSERT INTO students (name, email, active, dni_encrypted) VALUES ($1, $2, $3, encrypt_dni($4, $5))",
-        [name.trim(), userEmail.toLowerCase(), true, dni.trim(), encryptionKey]
-      );
-    }
+    await saveStudentDni(userEmail, name, dni);
 
     // Update name in users table (this will automatically sync name to students table too)
     await updateUser(userId, { name: name.trim() });
