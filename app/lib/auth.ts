@@ -1,6 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import type { Provider } from "next-auth/providers/index";
-import { saveLoginLog, createOAuthUser, getUserByEmail } from "@/app/lib/db";
+import { saveLoginLog, createOAuthUser, getUserByEmail, userNeedsOnboarding } from "@/app/lib/db";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
@@ -75,7 +75,7 @@ export const authOptions: NextAuthOptions = {
           if (!existingUser.active) return false;
         } else {
           // Usuario nuevo — crearlo en la DB
-          createOAuthUser(
+          await createOAuthUser(
             user.name ?? user.email.split("@")[0],
             user.email,
             "Estudiante"
@@ -113,6 +113,7 @@ export const authOptions: NextAuthOptions = {
           token.name = dbUser.name;
           token.email = dbUser.email;
           token.role = dbUser.role;
+          token.needsOnboarding = await userNeedsOnboarding(dbUser.email, dbUser.role);
         }
         return token;
       }
@@ -124,9 +125,11 @@ export const authOptions: NextAuthOptions = {
           token.id = dbUser.id;
           token.role = dbUser.role;
           token.name = dbUser.name;
+          token.needsOnboarding = await userNeedsOnboarding(dbUser.email, dbUser.role);
         } else {
           token.id = user.id;
           token.role = (user as any).role || "Estudiante";
+          token.needsOnboarding = true;
         }
         return token;
       }
@@ -139,6 +142,7 @@ export const authOptions: NextAuthOptions = {
           token.name = dbUser.name;
           token.email = dbUser.email;
           token.role = dbUser.role;
+          token.needsOnboarding = await userNeedsOnboarding(dbUser.email, dbUser.role);
         }
       }
 
@@ -153,6 +157,7 @@ export const authOptions: NextAuthOptions = {
           name: token.name as string,
           email: token.email as string,
           role: token.role as string,
+          needsOnboarding: token.needsOnboarding as boolean,
         } as any;
       }
       return session;

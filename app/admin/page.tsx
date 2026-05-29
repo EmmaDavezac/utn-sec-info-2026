@@ -20,7 +20,7 @@ export default async function AdminPage() {
             No tienes permiso para ver esta ruta. Solo usuarios con rol de <strong>Administrador</strong> pueden acceder.
           </p>
           <a
-            href="/chat"
+            href="/"
             className="inline-flex items-center justify-center rounded-2xl bg-zinc-900 px-6 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
           >
             Volver al chat

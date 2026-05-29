@@ -1,28 +1,27 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { getServerSession } from "next-auth";
-import { Header } from "@/app/Header";
-import { Providers } from "@/app/providers";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/lib/auth";
+import { Providers } from "@/app/providers";
+import SessionInitializer from "@/app/store/SessionInitializer";
+import { UserSession } from "@/app/store/session";
+import { Header } from "@/app/Header";
+import { OnboardingWrapper } from "@/app/components/OnboardingWrapper";
 import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-  preload: false,
-  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-  preload: false,
-  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Secure Campus",
-  description: "Aplicación con control de acceso y chat de IA",
+  title: "Secure Campus IA",
+  description: "Plataforma de gestión inteligente para el campus universitario",
 };
 
 export default async function RootLayout({
@@ -30,20 +29,36 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // 1. Obtenemos el usuario activo directo desde el servidor con NextAuth
   const session = await getServerSession(authOptions);
 
+  // 2. Formateamos la data para que coincida con tu interface UserSession de Zustand
+  const user = session?.user as { id?: string; image?: string; role?: string; name?: string; email?: string } | undefined;
+  const userSession: UserSession | null = user ? {
+    id: user.id ?? "",
+    firstName: user.name?.split(" ")[0] ?? "",
+    lastName: user.name?.split(" ").slice(1).join(" ") ?? "",
+    email: user.email ?? undefined,
+    imageUrl: user.image ?? "",
+    role: user.role?.toLowerCase() === "administrador" ? "admin" : (user.role?.toLowerCase() === "profesor" ? "profesor" : "estudiante"),
+  } : null;
+
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-[100dvh] antialiased`}
-    >
-      <body className="min-h-screen flex flex-col bg-white text-zinc-950 transition-colors duration-200">
-        <Providers session={session}>
-          <Header session={session} />
-          {children}
-        </Providers>
-      </body>
-    </html>
+    <Providers session={session}>
+      <html
+        lang="en"
+        className={`${geistSans.variable} ${geistMono.variable} h-[100dvh] antialiased overflow-hidden`}
+      >
+        <body className="h-full flex flex-col overflow-hidden bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50">
+          {/* 3. Inyectamos la sesión inicial en el store de Zustand */}
+          <SessionInitializer user={userSession} />
+          <Header />
+          <main className="flex-1 overflow-y-auto">
+            {children}
+          </main>
+          <OnboardingWrapper />
+        </body>
+      </html>
+    </Providers>
   );
 }

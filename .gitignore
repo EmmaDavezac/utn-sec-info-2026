@@ -40,9 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Base de datos
-
-!data/.gitkeep
-resolve-conflicts.js
-
-/app/generated/prisma
+# clerk configuration (can include secrets)
+/.clerk/

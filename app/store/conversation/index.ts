@@ -1,14 +1,21 @@
 import { create } from 'zustand'
-import { ConversationStore, Message, UserRole } from './types'
+import { persist } from 'zustand/middleware'
+import { ConversationStore, UserRole, Message } from './types'
 
 export const useConversationStore = create<ConversationStore>()(
-  (set, get) => ({
-    conversation: [],
+  persist(
+    (set, get) => ({
+      conversation: [],
 
-    addTeacherMessage: (message: string) => set({ conversation: [...get().conversation, { id:crypto.randomUUID(), text: message, role: UserRole.Teacher }] }),
-    addAiAgentMessage: (message: string) => set({ conversation: [...get().conversation, { id:crypto.randomUUID(), text: message, role: UserRole.Admin }] }),
-    clearConversation: () => set({ conversation: [] }),
-  })
+      addTeacherMessage: (message: string) => set({ conversation: [...get().conversation, { id:crypto.randomUUID(), text: message, role: UserRole.Teacher }] }),
+      addAiAgentMessage: (message: string) => set({ conversation: [...get().conversation, { id:crypto.randomUUID(), text: message, role: UserRole.Admin }] }),
+      clearConversation: () => set({ conversation: [] }),
+      
+    }),
+    {
+      name: 'conversation-store',
+    }
+  )
 )
 
 export { UserRole }

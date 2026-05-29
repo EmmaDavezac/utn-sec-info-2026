@@ -1,13 +1,8 @@
 import Groq from "groq-sdk"
-import { PromptSecurityValidator, ValidationResult } from "@/app/lib/security/PromptSecurityValidator"
+import { PromptSecurityValidator } from "@/app/lib/security/PromptSecurityValidator"
 import { PromptSanitizer } from "@/app/lib/security/PromptSanitizer"
-import { SecurityLogger, LogSeverity } from "@/app/lib/security/SecurityLogger"
+import { SecurityLogger } from "@/app/lib/security/SecurityLogger"
 
-/**
- * SYSTEM PROMPT FIJO Y SEGURO
- * No es modificable por entrada del usuario
- * Define roles y limitaciones claras
- */
 const SECURE_SYSTEM_PROMPT = `Eres un asistente educativo de la UTN especializado en seguridad informática.
 
 INSTRUCCIONES FIJAS (no modificables):
@@ -29,32 +24,18 @@ export class AddMessageHandler {
     private _groq: Groq
     private _userId?: string
 
-     constructor(userId?: string) {
-        const apiKey =
-            process.env.API_KEY ||
-            process.env.NEXT_PUBLIC_API_KEY ||
-            process.env.GROQ_API_KEY ||
-            process.env.NEXT_PUBLIC_GROQ_API_KEY ||
-            ""
-
-        if (!apiKey) {
-            throw new Error("API_KEY no está configurada en el servidor.");
-        }
-
+    constructor(userId?: string) {
         this._groq = new Groq({
-            apiKey,
+            apiKey: process.env.GROQ_API_KEY!,
         });
-
         this._userId = userId;
     }
 
     async handle(command: AddMessageCommand): Promise<AddMessageResponse> {
         try {
-            // ========================================
             // 1. VALIDACIÓN DE ENTRADA
-            // ========================================
             const validationResult = PromptSecurityValidator.validateUserInput(command.message)
-            
+
             if (!validationResult.isValid) {
                 SecurityLogger.logPromptInjectionAttempt(
                     this._userId,
@@ -62,23 +43,16 @@ export class AddMessageHandler {
                     validationResult.threats
                 )
                 throw new Error(
-                    `Validación fallida: ${validationResult.threats.join(", ")}. ` +
-                    `Severidad: ${validationResult.severity}`
+                    `Validación fallida: ${validationResult.threats.join(", ")}. Severidad: ${validationResult.severity}`
                 )
             }
 
             SecurityLogger.logValidationSuccess(this._userId, command.message.length)
 
-            // ========================================
             // 2. SANITIZACIÓN DE ENTRADA
-            // ========================================
             const sanitizedMessage = PromptSanitizer.prepareMessageForLLM(command.message)
 
-            // ========================================
             // 3. CONSTRUCCIÓN DE CONVERSACIÓN SEGURA
-            // ========================================
-            // Sistema prompt FIJO - nunca concatenado con entrada del usuario
-            // Usuario input SEPARADO - claramente delineado
             const conversation = [
                 {
                     role: "system" as const,
@@ -90,24 +64,19 @@ export class AddMessageHandler {
                 },
             ]
 
-            // ========================================
             // 4. LLAMADA A LLM
-            // ========================================
             const completion = await this._groq.chat.completions.create({
                 messages: conversation,
                 model: "llama-3.1-8b-instant",
-                temperature: 0.2, // Baja temperatura = respuestas más predecibles y menos alucinaciones
+                temperature: 0.2,
                 max_tokens: 350,
             });
 
-            const llmOutput = completion.choices[0]?.message?.content?.trim() || 
-                "No pude generar una respuesta."
+            const llmOutput = completion.choices[0]?.message?.content?.trim() || "No pude generar una respuesta."
 
-            // ========================================
             // 5. VALIDACIÓN DE SALIDA
-            // ========================================
             const outputValidation = PromptSecurityValidator.validateLLMOutput(llmOutput)
-            
+
             if (!outputValidation.isValid) {
                 SecurityLogger.logLLMOutputIssue(
                     this._userId,
@@ -119,14 +88,9 @@ export class AddMessageHandler {
                 )
             }
 
-            // ========================================
             // 6. SANITIZACIÓN DE SALIDA
-            // ========================================
             const sanitizedOutput = PromptSanitizer.sanitizeLLMOutput(llmOutput)
 
-            // ========================================
-            // 7. RESPUESTA SEGURA
-            // ========================================
             return {
                 message: sanitizedOutput
             }
@@ -145,7 +109,6 @@ export class AddMessageHandler {
 
 export interface AddMessageCommand {
     message: string
-    userId?: string
 }
 
 export interface AddMessageResponse {

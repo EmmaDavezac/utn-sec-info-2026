@@ -445,7 +445,8 @@ export default function AdminPanelClient() {
               <select
                 value={editDraft.role}
                 onChange={(event) => updateDraft('role', event.target.value)}
-                className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 transition-colors"
+                disabled={true}
+                className="w-full rounded-lg border border-zinc-300 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 px-4 py-3 text-sm cursor-not-allowed outline-none dark:border-zinc-700 transition-colors"
               >
                 {ROLES.map((option) => (
                   <option key={option} value={option}>

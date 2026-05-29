@@ -27,6 +27,7 @@ export default function AuthPage() {
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [dni, setDni] = useState("");
   const [registerError, setRegisterError] = useState<string | null>(null);
   const [registerSuccess, setRegisterSuccess] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -58,7 +59,7 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (isMounted && status === "authenticated") {
-      router.replace("/chat");
+      router.replace("/");
     }
   }, [status, router, isMounted]);
 
@@ -88,7 +89,7 @@ export default function AuthPage() {
       return;
     }
 
-    router.push("/chat");
+    router.push("/");
   };
 
  const handleRegister = async (event: FormEvent) => {
@@ -102,14 +103,20 @@ export default function AuthPage() {
       return;
     }
 
-    // 2. Validar fuerza de la contraseña (Regex)
-    // Criterios: 8+ caracteres, 1 Mayúscula, 1 Número, 1 Carácter Especial
-    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    
-    if (!strongPasswordRegex.test(registerPassword)) {
-      setRegisterError(
-        "La contraseña es muy débil. Debe tener al menos 8 caracteres, una mayúscula, un número y un carácter especial."
-      );
+    // 2. Validar que la contraseña tenga al menos 8 caracteres
+    if (registerPassword.length < 8) {
+      setRegisterError("La contraseña debe tener al menos 8 caracteres.");
+      return;
+    }
+
+    // 3. Validar DNI (7 u 8 dígitos)
+    const dniRegex = /^\d{7,8}$/;
+    if (!dni.trim()) {
+      setRegisterError("El DNI es obligatorio.");
+      return;
+    }
+    if (!dniRegex.test(dni.trim())) {
+      setRegisterError("El DNI debe ser un número de 7 u 8 dígitos.");
       return;
     }
 
@@ -122,30 +129,43 @@ export default function AuthPage() {
         body: JSON.stringify({ 
           name: name.trim(), 
           email: registerEmail.trim(), 
-          password: registerPassword 
+          password: registerPassword,
+          dni: dni.trim()
         }),
       });
 
       const data = await response.json();
-      setIsRegistering(false);
 
       if (!response.ok) {
         setRegisterError(data.error || "No se pudo registrar el usuario.");
+        setIsRegistering(false);
         return;
       }
 
-      setRegisterSuccess("Cuenta creada con éxito. Redirigiendo al inicio de sesión...");
+      setRegisterSuccess("Cuenta creada con éxito. Iniciando sesión...");
       
+      // Iniciar sesión automáticamente
+      const result = await signIn("credentials", {
+        redirect: false,
+        email: registerEmail.trim(),
+        password: registerPassword,
+      });
+
+      setIsRegistering(false);
+
+      if (!result?.ok) {
+        setRegisterError("Registro exitoso, pero ocurrió un error al iniciar sesión automáticamente.");
+        return;
+      }
+
       // Limpiar campos
       setName("");
       setRegisterEmail("");
       setRegisterPassword("");
       setConfirmPassword("");
+      setDni("");
 
-      // Cambiar de pestaña automáticamente
-      setTimeout(() => {
-        switchTab("signin");
-      }, 2000);
+      router.push("/");
     } catch (error) {
       setRegisterError("Error de conexión. Inténtalo de nuevo.");
       setIsRegistering(false);
@@ -178,7 +198,7 @@ export default function AuthPage() {
             </div>
             <div className="mt-8 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 text-sm text-zinc-600 dark:text-zinc-300">
               <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-2">Acceso rápido</p>
-              <p>Utiliza cualquiera de estas credenciales para probar la app desde distintos roles:</p>
+              <p>Regístrate si eres estudiante o ingresa con estas credenciales para probar la app desde distintos roles:</p>
               <div className="mt-3 text-zinc-800 dark:text-zinc-100 break-words">
                 <ul>
                   <li><strong>Admin:</strong> admin@example.com</li>
@@ -271,7 +291,7 @@ export default function AuthPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => signIn("google", { callbackUrl: "/chat" })}
+                      onClick={() => signIn("google", { callbackUrl: "/" })}
                       className="w-full rounded-2xl border border-zinc-900 bg-white text-zinc-900 py-3 text-sm font-semibold hover:bg-zinc-50 transition-colors dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                     >
                       Iniciar sesión con Google
@@ -317,6 +337,19 @@ export default function AuthPage() {
                   </label>
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    DNI del Estudiante
+                    <input
+                      type="text"
+                      value={dni}
+                      onChange={(event) => setDni(event.target.value)}
+                      placeholder="Ej: 12345678"
+                      className="mt-3 w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-4 py-3 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-500"
+                      required
+                    />
+                  </label>
+                </div>
+                <div>
                   <PasswordInput
                     label="Contraseña"
                     value={registerPassword}
@@ -325,7 +358,7 @@ export default function AuthPage() {
                   />
                 </div>
                 <small className="text-xs text-zinc-500 dark:text-zinc-400 block">
-                  La contraseña debe tener al menos 8 caracteres, incluir una mayúscula, un número y un carácter especial.
+                  La contraseña debe tener al menos 8 caracteres.
                 </small>
                 <div>
                   <PasswordInput

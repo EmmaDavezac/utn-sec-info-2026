@@ -1,13 +1,14 @@
 
 export interface Student {
-  id: string
+  id: number
   name: string
   email: string
   active: boolean
+  detail: string | null
 }
 
 export interface StudentsStore {
   students: Student[]
-
   setStudents: (students: Student[]) => void
+  updateStudentDetail: (studentId: number, detail: string) => void
 }
