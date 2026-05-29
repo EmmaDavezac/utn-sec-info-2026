@@ -43,7 +43,8 @@ export function withPermission(permission: PERMISSION, handler: PermissionedHand
 
             return await handler(request, userInfo, context);
         } catch (error) {
-            console.error(`[API Error] ${request.method} ${request.nextUrl.pathname}:`, error);
+            console.error("[[API Error] %s %s:",request.method,request.nextUrl.pathname,error);
+
             return NextResponse.json(
                 { error: 'Ocurrió un error al procesar la solicitud.' },
                 { status: 500 }

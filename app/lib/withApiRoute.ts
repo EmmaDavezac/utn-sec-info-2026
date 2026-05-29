@@ -25,7 +25,7 @@ export function withApiRoute(handler: ApiRouteHandler) {
             // Ejecutamos la lógica de negocio inyectando el userId extraído
             return await handler(request, userId);
         } catch (error) {
-            console.error(`[API Error] ${request.method} ${request.nextUrl.pathname}:`, error);
+            console.error("[[API Error] %s %s:",request.method,request.nextUrl.pathname,error);
             return NextResponse.json(
                 { error: "Ocurrió un error al procesar la solicitud" },
                 { status: 500 }
