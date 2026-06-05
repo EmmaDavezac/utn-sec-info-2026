@@ -23,13 +23,13 @@ Este documento detalla el avance cronológico del Trabajo Práctico Integrador a
 
 ---
 
-## Entrega 1: Hardening de API & Entorno (SQLite & Control de Acceso por Roles)
+## Fase 1: Hardening de API & Entorno (SQLite & Control de Acceso por Roles)
 
 ### 1. Gestión de Entorno y Secretos
 * **Archivos `.env` y `example.env`:** Separación estricta de credenciales de desarrollo. `.env` fue incorporado a `.gitignore` para prevenir fugas accidentales de API Keys (Groq, base de datos) y passwords.
 
 ### 2. Persistencia de Datos Inicial (SQLite)
-* Inicialmente el proyecto contemplaba **SQLite local** (mediante `better-sqlite3`) como motor de base de datos por su simplicidad operativa para el desarrollo rápido y local del proyecto.
+* Inicialmente el proyecto contemplaba **SQLite local** (mediante la librería `better-sqlite3`) como motor de base de datos para el prototipado rápido y desarrollo local (base de datos posteriormente reemplazada por PostgreSQL).
 
 ### 3. Autenticación y Autorización por Roles (RBAC Simple)
 * **NextAuth:** Configurado con JWT firmados en cookies seguras.
@@ -38,7 +38,7 @@ Este documento detalla el avance cronológico del Trabajo Práctico Integrador a
 
 ---
 
-## Entrega 2: Despliegue en Vercel, Migración a Neon y Reglas WAF
+## Fase 2: Despliegue en Vercel, Migración a Neon y Reglas WAF
 
 ### 1. Despliegue en la Nube y Migración a Neon (PostgreSQL)
 * **Migración a Neon:** SQLite utiliza un archivo local y las plataformas serverless como **Vercel** tienen sistemas de archivos efímeros y de solo lectura, lo que imposibilita su uso. Por esta razón, migramos la base de datos de **SQLite** a **PostgreSQL** alojado en la plataforma cloud **Neon**.
@@ -52,7 +52,7 @@ Para proteger la infraestructura de ataques directos y mapeos maliciosos, se con
 
 ---
 
-## Entrega 3: Prevención de Prompt Injection y Semgrep
+## Fase 3: Prevención de Prompt Injection y Semgrep
 
 ### 1. Defensa Multicapa de IA
 Para mitigar ataques contra el LLM (como *Instruction Override*, *Role-Play Bypass* e inyección de código), diseñamos un pipeline de seguridad en la carpeta `app/lib/security/`:
@@ -66,19 +66,19 @@ Para mitigar ataques contra el LLM (como *Instruction Override*, *Role-Play Bypa
 
 ---
 
-## Entrega 4: Hardening de Base de Datos, Migración a Supabase y Control de Acceso por Roles y Permisos
+## Fase 4: Hardening de Base de Datos, Migración a Supabase y Control de Acceso por Roles y Permisos
 
 ### 1. Migración a Supabase (PostgreSQL)
 * De acuerdo con los nuevos requerimientos y las consignas del TP, migramos la base de datos de **Neon** a **Supabase (PostgreSQL)**, permitiendo centralizar la autenticación, habilitar políticas avanzadas de Row Level Security (RLS), encriptación por hardware/software y auditorías robustas basadas en base de datos.
 * Se estructuraron los cambios del esquema mediante migraciones versionadas bajo control de Git en la carpeta `supabase/migrations/`.
 
 ### 2. Control de Acceso por Roles y Permisos (RBAC + Permisos)
-* Evolucionamos el control de acceso por roles (RBAC) simple de la Entrega 1 a un modelo de **control de acceso basado en roles y permisos** específicos. Esto permite una granularidad mucho más fina al validar los accesos a los endpoints y vistas en el middleware `withPermission.ts`.
+* Evolucionamos el control de acceso por roles (RBAC) simple de la Fase 1 a un modelo de **control de acceso basado en roles y permisos** específicos. Esto permite una granularidad mucho más fina al validar los accesos a los endpoints y vistas en el middleware `withPermission.ts`.
 
 ### 3. Hardening contra Inyección SQL (SQLi)
 * **A nivel de Base de Datos:** Parcheamos la función dinámica `actualizar_descripcion_vulnerable` introducida previamente en Supabase. Se reemplazó la concatenación de variables y el uso de `EXECUTE` por un comando estático parametrizado nativo de PL/pgSQL. De esta forma, el motor procesa el parámetro estrictamente como dato, haciendo la consulta inmune a SQLi.
 * **A nivel de Aplicación:** Desarrollamos la clase [`SqlInjectionGuard.ts`](file:///c:/Users/Janex/Desktop/utn-sec-info-2026/app/lib/security/SqlInjectionGuard.ts) para validar datos de entrada HTTP. La aplicamos en los endpoints clave de actualización de perfil, registro de usuarios y actualización de detalles de estudiantes, bloqueando payloads maliciosos y registrando el ataque en el `SecurityLogger`.
-* **A nivel de Firewall (WAF):** Cabe destacar que esta protección de doble capa (aplicación y base de datos) complementa la **regla de mitigación a nivel de firewall** ya implementada en la Entrega 2 (que filtra e intercepta payloads SQLi en la URL), conformando un sistema robusto de defensa en profundidad.
+* **A nivel de Firewall (WAF):** Cabe destacar que esta protección de doble capa (aplicación y base de datos) complementa la **regla de mitigación a nivel de firewall** ya implementada en la Fase 2 (que filtra e intercepta payloads SQLi en la URL), conformando un sistema robusto de defensa en profundidad.
 
 ### 4. Cifrado de Datos en Reposo (PGCRYPTO)
 * **Cifrado de DNI:** Empleamos la extensión `pgcrypto` en Supabase para cifrar simétricamente con AES-256 el DNI de los estudiantes en la base de datos (mediante la función `extensions.pgp_sym_encrypt`). Solo es desencriptado en memoria para usuarios autorizados, protegiendo la confidencialidad de la información ante accesos no autorizados a la persistencia.
