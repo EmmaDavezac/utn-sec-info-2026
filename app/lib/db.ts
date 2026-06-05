@@ -52,7 +52,7 @@ export async function initDb() {
         user_id TEXT NOT NULL,
         email TEXT,
         provider TEXT,
-        ip TEXT,
+        ip BYTEA,
         user_agent TEXT,
         timestamp TIMESTAMPTZ DEFAULT NOW()
       );
@@ -310,14 +310,26 @@ export async function saveLoginLog(data: {
   ip?: string;
   userAgent?: string;
 }) {
+  const encryptionKey = process.env.DB_ENCRYPTION_KEY || 'DEMO_KEY_CHANGE_IN_PRODUCTION_12345';
   await getPool().query(
-    "INSERT INTO login_logs (user_id, email, provider, ip, user_agent) VALUES ($1, $2, $3, $4, $5)",
-    [data.userId, data.email || null, data.provider || "credentials", data.ip || "unknown", data.userAgent || "unknown"]
+    "INSERT INTO login_logs (user_id, email, provider, ip, user_agent) VALUES ($1, $2, $3, encrypt_ip($4, $5), $6)",
+    [
+      data.userId,
+      data.email || null,
+      data.provider || "credentials",
+      data.ip || "unknown",
+      encryptionKey,
+      data.userAgent || "unknown"
+    ]
   );
 }
 
 export async function getRecentLogs(limit = 50) {
-  const { rows } = await getPool().query("SELECT * FROM login_logs ORDER BY timestamp DESC LIMIT $1", [limit]);
+  const encryptionKey = process.env.DB_ENCRYPTION_KEY || 'DEMO_KEY_CHANGE_IN_PRODUCTION_12345';
+  const { rows } = await getPool().query(
+    "SELECT id, user_id, email, provider, decrypt_ip(ip, $1) AS ip, user_agent, timestamp FROM login_logs ORDER BY timestamp DESC LIMIT $2",
+    [encryptionKey, limit]
+  );
   return rows;
 }
 
