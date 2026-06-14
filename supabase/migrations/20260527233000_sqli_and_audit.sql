@@ -13,13 +13,18 @@ ALTER ROLE postgres SET pgaudit.log = 'write, ddl';
 -- 3. Eliminar la función vulnerable y crear la versión corregida
 -- Reemplazamos la concatenación dinámica y EXECUTE por un UPDATE parametrizado nativo de PL/pgSQL
 DROP FUNCTION IF EXISTS actualizar_descripcion_vulnerable(int, text);
+DROP FUNCTION IF EXISTS actualizar_descripcion(int, text);
 
 CREATE OR REPLACE FUNCTION actualizar_descripcion(
     p_estudiante_id int,
-    p_nueva_descripcion text
+    p_nueva_descripcion text,
+    p_usuario_email text
 )
 RETURNS boolean AS $$
 BEGIN
+    -- Registrar el usuario que hace la modificación para auditoría en el contexto de la transacción
+    PERFORM set_config('app.current_user', p_usuario_email, true);
+
     -- Query parametrizada estática y segura. El motor de Postgres separa el comando de los datos.
     UPDATE "students" 
     SET "detail" = p_nueva_descripcion 
@@ -30,5 +35,5 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Comentarios explicativos para auditoría
-COMMENT ON FUNCTION actualizar_descripcion IS 'Actualiza la descripción de un estudiante de manera segura utilizando SQL parametrizado estático.';
+COMMENT ON FUNCTION actualizar_descripcion(int, text, text) IS 'Actualiza la descripción de un estudiante de manera segura utilizando SQL parametrizado estático e identificando al usuario auditor.';
 
