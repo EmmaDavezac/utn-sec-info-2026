@@ -576,7 +576,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 ### ***Función en Base de Datos (Corregida en Migración 20260527233000\)***
 
 ```sql
-CREATE OR REPLACE FUNCTION actualizar_descripcion_vulnerable(
+CREATE OR REPLACE FUNCTION actualizar_descripcion(
     p_estudiante_id int,
     p_nueva_descripcion text
 ) RETURNS boolean AS $$

@@ -10,9 +10,11 @@ CREATE EXTENSION IF NOT EXISTS pgaudit;
 ALTER ROLE authenticator SET pgaudit.log = 'write, ddl';
 ALTER ROLE postgres SET pgaudit.log = 'write, ddl';
 
--- 3. Corregir la función vulnerable eliminando la inyección SQL (SQLi)
+-- 3. Eliminar la función vulnerable y crear la versión corregida
 -- Reemplazamos la concatenación dinámica y EXECUTE por un UPDATE parametrizado nativo de PL/pgSQL
-CREATE OR REPLACE FUNCTION actualizar_descripcion_vulnerable(
+DROP FUNCTION IF EXISTS actualizar_descripcion_vulnerable(int, text);
+
+CREATE OR REPLACE FUNCTION actualizar_descripcion(
     p_estudiante_id int,
     p_nueva_descripcion text
 )
@@ -28,4 +30,5 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Comentarios explicativos para auditoría
-COMMENT ON FUNCTION actualizar_descripcion_vulnerable IS 'Actualiza la descripción de un estudiante de manera segura utilizando SQL parametrizado estático.';
+COMMENT ON FUNCTION actualizar_descripcion IS 'Actualiza la descripción de un estudiante de manera segura utilizando SQL parametrizado estático.';
+

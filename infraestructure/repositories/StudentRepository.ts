@@ -31,7 +31,7 @@ export class StudentRepository {
 
         //vector de ataque
         //X', "name" = 'Hackeado' WHERE 1=1; --
-        const { error } = await supabase.rpc('actualizar_descripcion_vulnerable', {
+        const { error } = await supabase.rpc('actualizar_descripcion', {
             p_estudiante_id: studentId,
             p_nueva_descripcion: detail
         });
