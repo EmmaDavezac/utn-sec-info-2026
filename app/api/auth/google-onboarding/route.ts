@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     await saveStudentDni(userEmail, name, dni);
 
     // Update name in users table (this will automatically sync name to students table too)
-    await updateUser(userId, { name: name.trim() });
+    await updateUser(userId, { name: name.trim() }, userEmail);
 
     return NextResponse.json({ success: true });
   } catch (error) {
