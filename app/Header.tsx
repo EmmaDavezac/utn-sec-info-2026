@@ -7,6 +7,7 @@ import { Guard } from "@/app/components/Guard";
 import { useSessionStore } from "@/app/store/session";
 import { PERMISSION } from "@/domain/identity/permissions";
 import { useSession, signOut } from "next-auth/react";
+import { useToast } from "@/app/providers";
 
 const NavLink = ({ href, children }: { href: string; children: ReactNode }) => {
   const pathname = usePathname();
@@ -15,10 +16,10 @@ const NavLink = ({ href, children }: { href: string; children: ReactNode }) => {
   return (
     <Link
       href={href}
-      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+      className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 ${
         isActive
-          ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
-          : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+          ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-xs"
+          : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50 hover:bg-zinc-50 dark:hover:bg-zinc-900/50"
       }`}
     >
       {children}
@@ -28,6 +29,7 @@ const NavLink = ({ href, children }: { href: string; children: ReactNode }) => {
 
 export function Header() {
   const { data: session, status } = useSession();
+  const { confirm } = useToast();
   const isLoaded = status !== "loading";
   const { user, setUser } = useSessionStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -64,8 +66,9 @@ export function Header() {
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
-  const handleSignOut = () => {
-    if (window.confirm("¿Estás seguro que quieres cerrar sesión?")) {
+  const handleSignOut = async () => {
+    const confirmed = await confirm("¿Estás seguro que quieres cerrar sesión?", "Cerrar sesión");
+    if (confirmed) {
       signOut({ callbackUrl: "/auth" });
     }
   };
@@ -100,7 +103,7 @@ export function Header() {
           <div className="relative">
             <button
               onClick={() => setIsMenuOpen((prev) => !prev)}
-              className="flex items-center gap-2 h-8 w-8 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold text-sm justify-center ring-1 ring-zinc-200 dark:ring-zinc-800 hover:opacity-85 transition-opacity"
+              className="flex items-center gap-2 h-8 w-8 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold text-sm justify-center ring-1 ring-zinc-200 dark:ring-zinc-800 hover:scale-105 hover:shadow-md active:scale-95 transition-all duration-200"
               type="button"
               aria-label="Abrir menú de usuario"
             >
@@ -117,7 +120,7 @@ export function Header() {
             </button>
 
             {isMenuOpen && (
-              <div className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-900 z-50">
+              <div className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-900 z-50 animate-slide-down-fade origin-top-right">
                 <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800">
                   <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate">
                     {session.user?.name}
@@ -128,14 +131,14 @@ export function Header() {
                 </div>
                 <Link
                   href="/profile"
-                  className="block px-4 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
+                  className="block px-4 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50 hover:pl-6 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-all duration-200"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Mi perfil
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-zinc-50 dark:text-red-400 dark:hover:bg-zinc-800 transition-colors border-t border-zinc-100 dark:border-zinc-800"
+                  className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-zinc-50 hover:pl-6 dark:text-red-400 dark:hover:bg-zinc-800 transition-all duration-200 border-t border-zinc-100 dark:border-zinc-800"
                 >
                   Cerrar sesión
                 </button>

@@ -48,7 +48,7 @@ export default function Home() {
               </span>
               <button
                 onClick={() => clearConversation?.()}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-950/30 dark:hover:text-red-400 dark:hover:border-red-900/50 transition-all focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-950/30 dark:hover:text-red-400 dark:hover:border-red-900/50 transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500/20"
                 title="Limpiar conversación"
                 aria-label="Limpiar conversación"
               >
@@ -73,7 +73,7 @@ export default function Home() {
                   className={`flex w-full ${msg.role === UserRole.Teacher ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[85%] sm:max-w-[75%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${msg.role === UserRole.Teacher
+                    className={`max-w-[85%] sm:max-w-[75%] px-4 py-3 rounded-2xl text-sm leading-relaxed animate-slide-in-up shadow-sm border border-zinc-100/50 dark:border-zinc-800/30 ${msg.role === UserRole.Teacher
                         ? "bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-900 rounded-br-sm"
                         : "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 rounded-bl-sm"
                       }`}
@@ -85,11 +85,11 @@ export default function Home() {
             )}
 
             {isLoading && (
-              <div className="flex w-full justify-start">
-                <div className="max-w-[85%] px-4 py-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 rounded-bl-sm flex gap-1 items-center">
-                  <div className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce [animation-delay:-0.3s]" />
-                  <div className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce [animation-delay:-0.15s]" />
-                  <div className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" />
+              <div className="flex w-full justify-start animate-slide-in-up">
+                <div className="max-w-[85%] px-4 py-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 rounded-bl-sm flex gap-1.5 items-center shadow-xs">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-bounce [animation-delay:-0.3s]" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-bounce [animation-delay:-0.15s]" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-bounce" />
                 </div>
               </div>
             )}
@@ -106,14 +106,14 @@ export default function Home() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Escribe un mensaje..."
-              className="flex-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-500 transition-shadow"
+              className="flex-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/30 dark:focus:ring-zinc-500/30 transition-all duration-300 placeholder-zinc-400 dark:placeholder-zinc-500 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/80 focus:bg-white dark:focus:bg-zinc-900 shadow-inner focus:shadow-xs"
               disabled={isLoading}
               suppressHydrationWarning
             />
             <button
               type="submit"
               disabled={!inputValue.trim() || isLoading}
-              className="p-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-full hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center aspect-square"
+              className="p-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-full hover:bg-zinc-800 dark:hover:bg-zinc-200 hover:scale-105 active:scale-95 disabled:scale-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center aspect-square shadow-md hover:shadow-lg disabled:shadow-none"
               aria-label="Enviar mensaje"
               suppressHydrationWarning
             >
