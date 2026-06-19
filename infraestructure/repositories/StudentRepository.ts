@@ -26,14 +26,15 @@ export class StudentRepository {
         return data as StudentRow[]
     }        
 
-    async updateDetail(studentId: number, detail: string): Promise<void> {
+    async updateDetail(studentId: number, detail: string, userEmail: string | null): Promise<void> {
         const supabase = getSupabaseClient()
 
         //vector de ataque
         //X', "name" = 'Hackeado' WHERE 1=1; --
-        const { error } = await supabase.rpc('actualizar_descripcion_vulnerable', {
+        const { error } = await supabase.rpc('actualizar_descripcion', {
             p_estudiante_id: studentId,
-            p_nueva_descripcion: detail
+            p_nueva_descripcion: detail,
+            p_usuario_email: userEmail ?? 'unknown'
         });
 
         if (error) {

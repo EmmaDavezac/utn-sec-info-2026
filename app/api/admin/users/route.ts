@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'El correo ya está en uso.' }, { status: 409 })
   }
 
-  const user = await createUser(name.trim(), email.trim(), password.trim(), normalizedRole)
+  const user = await createUser(name.trim(), email.trim(), password.trim(), normalizedRole, undefined, token?.email ?? null)
   return NextResponse.json({ user }, { status: 201 })
 }
 
@@ -76,7 +76,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const updated = await updateUser(id, { name, email, role, active })
+    const updated = await updateUser(id, { name, email, role, active }, token?.email ?? null)
     if (!updated) return NextResponse.json({ error: 'Usuario no encontrado.' }, { status: 404 })
     return NextResponse.json({ user: updated })
   } catch (error) {
@@ -93,7 +93,7 @@ export async function DELETE(request: NextRequest) {
 
   if (!id) return NextResponse.json({ error: 'ID es obligatorio.' }, { status: 400 })
 
-  const deleted = await deleteUser(id)
+  const deleted = await deleteUser(id, token?.email ?? null)
   if (!deleted) return NextResponse.json({ error: 'Usuario no encontrado.' }, { status: 404 })
 
   return NextResponse.json({ success: true })

@@ -30,7 +30,7 @@ const patchStudentDetailHandler = async (
     }
 
     const handler = new UpdateStudentDetailHandler()
-    await handler.handle({ studentId, detail: body.detail })
+    await handler.handle({ studentId, detail: body.detail, userEmail: userInfo.email })
 
     return NextResponse.json({ success: true })
 }

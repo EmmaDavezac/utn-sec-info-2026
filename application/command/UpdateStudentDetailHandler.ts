@@ -8,11 +8,12 @@ export class UpdateStudentDetailHandler {
     }
 
     async handle(command: UpdateStudentDetailCommand): Promise<void> {
-        await this.repository.updateDetail(command.studentId, command.detail)
+        await this.repository.updateDetail(command.studentId, command.detail, command.userEmail)
     }
 }
 
 export interface UpdateStudentDetailCommand {
     studentId: number
     detail: string
+    userEmail: string | null
 }

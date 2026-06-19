@@ -4,10 +4,12 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import PasswordInput from "@/app/components/PasswordInput";
+import { useToast } from "@/app/providers";
 
 export default function ProfilePage() {
   const router = useRouter();
   const { data: session, status, update } = useSession();
+  const { toast, confirm } = useToast();
   const [isMounted, setIsMounted] = useState(false);
 
   // Estados de Modo y Visibilidad
@@ -49,9 +51,10 @@ export default function ProfilePage() {
 
   // --- LÓGICA DE PERFIL ---
 
-  const handleCancelProfile = () => {
+  const handleCancelProfile = async () => {
     if (name !== session?.user?.name || email !== session?.user?.email) {
-      if (!confirm("¿Descartar los cambios realizados?")) return;
+      const confirmed = await confirm("¿Descartar los cambios realizados?", "Descartar cambios");
+      if (!confirmed) return;
     }
     // Revertir a los valores de la sesión
     setName(session?.user?.name ?? "");
@@ -62,13 +65,14 @@ export default function ProfilePage() {
 
   const handleProfileSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!confirm("¿Estás seguro de que deseas guardar estos cambios?")) return;
+    const confirmed = await confirm("¿Estás seguro de que deseas guardar estos cambios?", "Guardar cambios");
+    if (!confirmed) return;
 
     setProfileError(null);
     setProfileMessage(null);
 
     if (!name.trim() || !email.trim()) {
-      setProfileError("El nombre y el correo son obligatorios.");
+      toast.error("El nombre y el correo son obligatorios.");
       return;
     }
 
@@ -83,7 +87,7 @@ export default function ProfilePage() {
       const data = await response.json();
       
       if (!response.ok) {
-        setProfileError(data.error || "No se pudo actualizar el perfil.");
+        toast.error(data.error || "No se pudo actualizar el perfil.");
         return;
       }
 
@@ -92,10 +96,10 @@ export default function ProfilePage() {
         user: { ...session?.user, name: name.trim(), email: email.trim() },
       });
 
-      setProfileMessage("Perfil actualizado correctamente.");
+      toast.success("Perfil actualizado correctamente.");
       setIsEditingProfile(false); // Volver a modo lectura
     } catch (error) {
-      setProfileError("Error al actualizar el perfil.");
+      toast.error("Error al actualizar el perfil.");
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -103,9 +107,10 @@ export default function ProfilePage() {
 
   // --- LÓGICA DE CONTRASEÑA ---
 
-  const handleCancelPassword = () => {
+  const handleCancelPassword = async () => {
     if (currentPassword || newPassword || confirmPassword) {
-      if (!confirm("¿Cancelar el cambio de contraseña? Se perderán los datos ingresados.")) return;
+      const confirmed = await confirm("¿Cancelar el cambio de contraseña? Se perderán los datos ingresados.", "Cancelar cambios");
+      if (!confirmed) return;
     }
     setCurrentPassword("");
     setNewPassword("");
@@ -119,18 +124,19 @@ export default function ProfilePage() {
 
     // 1. Validar que coincidan
     if (newPassword !== confirmPassword) {
-      setPasswordError("Las nuevas contraseñas no coinciden.");
+      toast.error("Las nuevas contraseñas no coinciden.");
       return;
     }
 
     // 2. Validar longitud de la contraseña
     if (newPassword.length < 8) {
-      setPasswordError("La contraseña debe tener al menos 8 caracteres.");
+      toast.error("La contraseña debe tener al menos 8 caracteres.");
       return;
     }
 
     // 3. Confirmación del usuario
-    if (!confirm("¿Confirmas el cambio de contraseña?")) return;
+    const confirmed = await confirm("¿Confirmas el cambio de contraseña?", "Confirmar contraseña");
+    if (!confirmed) return;
 
     setPasswordError(null);
     setPasswordMessage(null);
@@ -145,11 +151,11 @@ export default function ProfilePage() {
 
       if (!response.ok) {
         const data = await response.json();
-        setPasswordError(data.error || "Error al cambiar la contraseña.");
+        toast.error(data.error || "Error al cambiar la contraseña.");
         return;
       }
 
-      setPasswordMessage("Contraseña actualizada con éxito.");
+      toast.success("Contraseña actualizada con éxito.");
       
       // Limpiar campos
       setCurrentPassword("");
@@ -159,7 +165,7 @@ export default function ProfilePage() {
       // Cerrar sección después de un breve delay
       setTimeout(() => setShowPasswordSection(false), 2000);
     } catch (error) {
-      setPasswordError("Error al conectar con el servidor.");
+      toast.error("Error al conectar con el servidor.");
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -224,9 +230,6 @@ export default function ProfilePage() {
                 />
               </div>
 
-              {profileError && <p className="text-sm text-red-600">{profileError}</p>}
-              {profileMessage && <p className="text-sm text-emerald-600">{profileMessage}</p>}
-
               {isEditingProfile ? (
                 <div className="flex gap-3 pt-2">
                   <button
@@ -268,9 +271,6 @@ export default function ProfilePage() {
                 La contraseña debe tener al menos 8 caracteres.
               </small>
               <PasswordInput label="Confirmar nueva contraseña" value={confirmPassword} onChange={setConfirmPassword} required />
-
-              {passwordError && <p className="text-sm text-red-600">{passwordError}</p>}
-              {passwordMessage && <p className="text-sm text-emerald-600">{passwordMessage}</p>}
 
               <div className="flex gap-3 pt-2">
                 <button

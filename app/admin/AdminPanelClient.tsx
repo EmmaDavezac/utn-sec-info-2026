@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useSession } from "next-auth/react";
+import { useToast } from "@/app/providers";
 type User = {
   id: string;
   name: string;
@@ -16,6 +17,7 @@ const ROLE_FILTERS = ["Todos", ...ROLES];
 
 export default function AdminPanelClient() {
   const { data: session } = useSession();
+  const { toast, confirm } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,12 +104,13 @@ export default function AdminPanelClient() {
     const original = users.find((user) => user.id === id);
     if (!original) return;
     if (!editDraft.name.trim() || !editDraft.email.trim()) {
-      setError('Nombre y correo son obligatorios.');
+      toast.error('Nombre y correo son obligatorios.');
       return;
     }
 
-    const confirmed = window.confirm(
-      `¿Confirmas guardar los cambios en el usuario ${original.name}?`
+    const confirmed = await confirm(
+      `¿Confirmas guardar los cambios en el usuario ${original.name}?`,
+      "Confirmar cambios"
     );
     if (!confirmed) return;
 
@@ -130,10 +133,9 @@ export default function AdminPanelClient() {
 
       await loadUsers();
       cancelEdit();
-      setSuccessMessage('Usuario actualizado correctamente.');
+      toast.success('Usuario actualizado correctamente.');
     } catch (err) {
-      setSuccessMessage(null);
-      setError((err as Error).message);
+      toast.error((err as Error).message);
     } finally {
       setSavingId(null);
     }
@@ -144,7 +146,7 @@ export default function AdminPanelClient() {
     if (!user) return;
 
     const actionLabel = active ? 'habilitar' : 'dar de baja';
-    const confirmed = window.confirm(`¿Seguro quieres ${actionLabel} a ${user.name}?`);
+    const confirmed = await confirm(`¿Seguro quieres ${actionLabel} a ${user.name}?`, "Confirmar estado");
     if (!confirmed) return;
 
     setSavingId(id);
@@ -165,10 +167,9 @@ export default function AdminPanelClient() {
       }
 
       await loadUsers();
-      setSuccessMessage(active ? 'Usuario habilitado correctamente.' : 'Usuario inhabilitado correctamente.');
+      toast.success(active ? 'Usuario habilitado correctamente.' : 'Usuario inhabilitado correctamente.');
     } catch (err) {
-      setSuccessMessage(null);
-      setError((err as Error).message);
+      toast.error((err as Error).message);
     } finally {
       setSavingId(null);
     }
@@ -195,14 +196,15 @@ export default function AdminPanelClient() {
 
     if (Object.keys(errors).length > 0) {
       setNewUserErrors(errors);
-      setError('Corrige los campos marcados.');
+      toast.error('Corrige los campos marcados.');
       return;
     }
 
     setNewUserErrors({});
 
-    const confirmRegister = window.confirm(
-      `¿Confirmas registrar al usuario ${trimmedName} con correo ${trimmedEmail} y rol ${newUser.role}?`
+    const confirmRegister = await confirm(
+      `¿Confirmas registrar al usuario ${trimmedName} con correo ${trimmedEmail} y rol ${newUser.role}?`,
+      "Registrar usuario"
     );
     if (!confirmRegister) return;
 
@@ -230,15 +232,71 @@ export default function AdminPanelClient() {
 
       setNewUser({ name: '', email: '', password: '', role: 'Estudiante' });
       await loadUsers();
-      setSuccessMessage('Usuario registrado correctamente.');
+      toast.success('Usuario registrado correctamente.');
       setShowRegisterForm(false);
     } catch (err) {
-      setSuccessMessage(null);
-      setError((err as Error).message);
+      toast.error((err as Error).message);
     } finally {
       setCreating(false);
     }
   };
+
+  const AdminSkeleton = () => (
+    <div className="animate-pulse space-y-6">
+      {/* Mobile view skeletons */}
+      <div className="space-y-4 lg:hidden">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950/40"
+          >
+            <div className="flex items-center justify-between">
+              <div className="space-y-2 w-1/2">
+                <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-3/4" />
+                <div className="h-3 bg-zinc-100 dark:bg-zinc-900 rounded w-1/2" />
+              </div>
+              <div className="h-6 bg-zinc-200 dark:bg-zinc-800 rounded-full w-16" />
+            </div>
+            <div className="mt-4 space-y-2">
+              <div className="h-8 bg-zinc-100 dark:bg-zinc-900 rounded-2xl" />
+              <div className="h-8 bg-zinc-100 dark:bg-zinc-900 rounded-2xl" />
+            </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <div className="h-12 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+              <div className="h-12 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop view skeletons */}
+      <div className="hidden lg:block overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800">
+          <thead className="bg-zinc-100 dark:bg-zinc-950">
+            <tr>
+              {["Nombre", "Correo", "Rol", "Provider", "Estado", "Acciones"].map((h) => (
+                <th key={h} className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
+            {[1, 2, 3, 4].map((i) => (
+              <tr key={i}>
+                <td className="px-6 py-5"><div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-2/3" /></td>
+                <td className="px-6 py-5"><div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-3/4" /></td>
+                <td className="px-6 py-5"><div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-20" /></td>
+                <td className="px-6 py-5"><div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-16" /></td>
+                <td className="px-6 py-5"><div className="h-6 bg-zinc-200 dark:bg-zinc-800 rounded-full w-14" /></td>
+                <td className="px-6 py-5 text-right"><div className="inline-flex gap-2 w-full justify-end"><div className="h-10 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-24" /><div className="h-10 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-24" /></div></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 
   return (
     <main className="min-h-full bg-zinc-50 dark:bg-zinc-950 px-4 py-10 overflow-y-auto">
@@ -268,7 +326,7 @@ export default function AdminPanelClient() {
                 <button
                   type="button"
                   onClick={() => setShowRegisterForm((prev) => !prev)}
-                  className="inline-flex items-center justify-center rounded-lg border border-zinc-900 bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800 dark:border-zinc-100 dark:bg-zinc-950 dark:text-white dark:hover:bg-zinc-800 transition-colors"
+                  className="inline-flex items-center justify-center rounded-lg border border-zinc-900 bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800 hover:scale-[1.02] active:scale-95 hover:shadow-md dark:border-zinc-100 dark:bg-zinc-950 dark:text-white dark:hover:bg-zinc-800 transition-all duration-200"
                 >
                   {showRegisterForm ? 'Volver al panel' : 'Registrar nuevo usuario'}
                 </button>
@@ -283,7 +341,7 @@ export default function AdminPanelClient() {
                     value={searchQuery}
                     onChange={(event) => setSearchQuery(event.target.value)}
                     placeholder="Nombre o correo"
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                    className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 transition-all duration-200 focus:shadow-xs"
                   />
                 </label>
                 <label className="space-y-2 text-sm text-zinc-700 dark:text-zinc-200">
@@ -291,7 +349,7 @@ export default function AdminPanelClient() {
                   <select
                     value={roleFilter}
                     onChange={(event) => setRoleFilter(event.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                    className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 transition-all duration-200 focus:shadow-xs"
                   >
                     {ROLE_FILTERS.map((option) => (
                       <option key={option} value={option}>
@@ -305,7 +363,7 @@ export default function AdminPanelClient() {
           </section>
 
           {showRegisterForm && (
-            <section className="mb-10 rounded-lg border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-800 dark:bg-zinc-950">
+            <section className="mb-10 rounded-lg border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-800 dark:bg-zinc-950 animate-slide-down-fade origin-top shadow-xs">
             <h2 className="mb-4 text-xl font-semibold text-zinc-900 dark:text-zinc-100">Registrar nuevo usuario</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="space-y-2 text-sm text-zinc-700 dark:text-zinc-200">
@@ -383,7 +441,7 @@ export default function AdminPanelClient() {
               type="button"
               onClick={createNewUser}
               disabled={creating}
-              className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+              className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800 hover:scale-[1.02] active:scale-95 disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 shadow-md hover:shadow-lg disabled:shadow-none"
             >
               {creating ? (
                 <>
@@ -403,11 +461,11 @@ export default function AdminPanelClient() {
       )}
 
       {!editingUserId && !showRegisterForm && isLoading && (
-        <div className="text-zinc-500 dark:text-zinc-400">Cargando usuarios...</div>
+        <AdminSkeleton />
       )}
 
       {editingUserId && editDraft && (
-        <section ref={editFormRef} className="mb-8 rounded-lg border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-800 dark:bg-zinc-950">
+        <section ref={editFormRef} className="mb-8 rounded-lg border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-800 dark:bg-zinc-950 animate-slide-down-fade origin-top shadow-md">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Editar usuario</h2>
@@ -460,7 +518,7 @@ export default function AdminPanelClient() {
             <button
               type="button"
               onClick={cancelEdit}
-              className="rounded-lg border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              className="rounded-lg border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-100 hover:scale-102 active:scale-95 transition-all duration-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
             >
               Cancelar
             </button>
@@ -468,7 +526,7 @@ export default function AdminPanelClient() {
               type="button"
               onClick={() => saveUser(editingUserId)}
               disabled={savingId === editingUserId}
-              className="rounded-lg bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 transition-colors inline-flex items-center justify-center gap-2"
+              className="rounded-lg bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800 hover:scale-102 active:scale-95 disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 inline-flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:shadow-none"
             >
               {savingId === editingUserId ? (
                 <>
@@ -501,7 +559,7 @@ export default function AdminPanelClient() {
                   {filteredUsers.map((user) => (
                     <div
                       key={user.id}
-                      className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+                      className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 animate-slide-in-up hover:scale-[1.01] hover:shadow-md transition-all duration-300"
                     >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="min-w-0">
@@ -526,7 +584,7 @@ export default function AdminPanelClient() {
                         <button
                           type="button"
                           onClick={() => startEditing(user)}
-                          className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-4 text-sm font-semibold text-zinc-900 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800 touch-manipulation transition-colors"
+                          className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-4 text-sm font-semibold text-zinc-900 hover:bg-zinc-100 hover:scale-102 active:scale-95 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800 touch-manipulation transition-all duration-200"
                         >
                           Editar
                         </button>
@@ -534,7 +592,7 @@ export default function AdminPanelClient() {
                           type="button"
                           onClick={() => toggleUserActive(user.id, user.active ? false : true)}
                           disabled={savingId === user.id}
-                          className={`w-full rounded-lg px-4 py-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation transition-colors inline-flex items-center justify-center gap-2 ${
+                          className={`w-full rounded-lg px-4 py-4 text-sm font-semibold text-white hover:scale-102 active:scale-95 disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation transition-all duration-200 inline-flex items-center justify-center gap-2 ${
                             user.active ? 'bg-rose-600 hover:bg-rose-500' : 'bg-emerald-600 hover:bg-emerald-500'
                           }`}
                         >
@@ -569,7 +627,7 @@ export default function AdminPanelClient() {
                     </thead>
                     <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
                       {filteredUsers.map((user) => (
-                        <tr key={user.id}>
+                        <tr key={user.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 transition-colors duration-200">
                           <td className="px-6 py-4 text-sm text-zinc-900 dark:text-zinc-100">{user.name}</td>
                           <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400">{user.email}</td>
                           <td className="px-6 py-4 text-sm text-zinc-900 dark:text-zinc-100">{user.role}</td>
@@ -584,7 +642,7 @@ export default function AdminPanelClient() {
                               <button
                                 type="button"
                                 onClick={() => startEditing(user)}
-                                className="inline-flex min-w-[120px] items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                                className="inline-flex min-w-[120px] items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-100 hover:scale-105 active:scale-95 transition-all duration-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
                               >
                                 Editar
                               </button>
@@ -592,7 +650,7 @@ export default function AdminPanelClient() {
                                 type="button"
                                 onClick={() => toggleUserActive(user.id, user.active ? false : true)}
                                 disabled={savingId === user.id}
-                                className={`inline-flex min-w-[120px] items-center justify-center rounded-lg px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 transition-colors gap-2 ${
+                                className={`inline-flex min-w-[120px] items-center justify-center rounded-lg px-4 py-3 text-sm font-semibold text-white hover:scale-105 active:scale-95 disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 gap-2 ${
                                   user.active ? 'bg-rose-600 hover:bg-rose-500' : 'bg-emerald-600 hover:bg-emerald-500'
                                 }`}
                               >
