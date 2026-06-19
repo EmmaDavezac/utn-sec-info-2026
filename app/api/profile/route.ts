@@ -54,7 +54,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const updated = await updateUser(userId, { name: name.trim(), email: email.trim() });
+    const updated = await updateUser(userId, { name: name.trim(), email: email.trim() }, session.user.email ?? null);
     if (!updated) {
       return NextResponse.json({ error: "No se pudo actualizar el perfil" }, { status: 400 });
     }

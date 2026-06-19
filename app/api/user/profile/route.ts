@@ -29,7 +29,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const updated = updateUser(userId, { name, email });
+    const updated = await updateUser(userId, { name, email }, session.user.email ?? null);
 
     if (!updated) {
       return NextResponse.json({ error: "No se pudo actualizar el perfil" }, { status: 400 });

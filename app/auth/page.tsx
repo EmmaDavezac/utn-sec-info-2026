@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import PasswordInput from "@/app/components/PasswordInput";
+import { useToast } from "@/app/providers";
 
 type ActiveTab = "signin" | "register";
 
@@ -14,6 +15,7 @@ export default function AuthPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { status } = useSession();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<ActiveTab>("signin");
   const [isMounted, setIsMounted] = useState(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
@@ -85,7 +87,7 @@ export default function AuthPage() {
     setIsSigningIn(false);
 
     if (!result?.ok) {
-      setSignInError("Correo o contraseña incorrectos.");
+      toast.error("Correo o contraseña incorrectos.");
       return;
     }
 
@@ -99,24 +101,24 @@ export default function AuthPage() {
 
     // 1. Validar que las contraseñas coincidan
     if (registerPassword !== confirmPassword) {
-      setRegisterError("Las contraseñas no coinciden.");
+      toast.error("Las contraseñas no coinciden.");
       return;
     }
 
     // 2. Validar que la contraseña tenga al menos 8 caracteres
     if (registerPassword.length < 8) {
-      setRegisterError("La contraseña debe tener al menos 8 caracteres.");
+      toast.error("La contraseña debe tener al menos 8 caracteres.");
       return;
     }
 
     // 3. Validar DNI (7 u 8 dígitos)
     const dniRegex = /^\d{7,8}$/;
     if (!dni.trim()) {
-      setRegisterError("El DNI es obligatorio.");
+      toast.error("El DNI es obligatorio.");
       return;
     }
     if (!dniRegex.test(dni.trim())) {
-      setRegisterError("El DNI debe ser un número de 7 u 8 dígitos.");
+      toast.error("El DNI debe ser un número de 7 u 8 dígitos.");
       return;
     }
 
@@ -137,12 +139,12 @@ export default function AuthPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setRegisterError(data.error || "No se pudo registrar el usuario.");
+        toast.error(data.error || "No se pudo registrar el usuario.");
         setIsRegistering(false);
         return;
       }
 
-      setRegisterSuccess("Cuenta creada con éxito. Iniciando sesión...");
+      toast.success("Cuenta creada con éxito. Iniciando sesión...");
       
       // Iniciar sesión automáticamente
       const result = await signIn("credentials", {
@@ -154,7 +156,7 @@ export default function AuthPage() {
       setIsRegistering(false);
 
       if (!result?.ok) {
-        setRegisterError("Registro exitoso, pero ocurrió un error al iniciar sesión automáticamente.");
+        toast.error("Registro exitoso, pero ocurrió un error al iniciar sesión automáticamente.");
         return;
       }
 
@@ -217,7 +219,7 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={() => switchTab("signin")}
-                className={`flex-1 px-4 py-3 text-sm font-semibold transition ${
+                className={`flex-1 px-4 py-3 text-sm font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
                   activeTab === "signin"
                     ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
                     : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800"
@@ -228,7 +230,7 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={() => switchTab("register")}
-                className={`flex-1 px-4 py-3 text-sm font-semibold transition ${
+                className={`flex-1 px-4 py-3 text-sm font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
                   activeTab === "register"
                     ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
                     : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800"
@@ -239,7 +241,7 @@ export default function AuthPage() {
             </div>
 
             {activeTab === "signin" ? (
-              <form className="space-y-5 h-full" onSubmit={handleSignIn}>
+              <form className="space-y-5 h-full animate-fade-in" onSubmit={handleSignIn}>
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                     Correo electrónico
@@ -247,7 +249,7 @@ export default function AuthPage() {
                       type="email"
                       value={signInEmail}
                       onChange={(event) => setSignInEmail(event.target.value)}
-                      className="mt-3 w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-4 py-3 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-500"
+                      className="mt-3 w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-4 py-3 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/30 dark:focus:ring-zinc-500/30 transition-all duration-300 focus:shadow-md hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50"
                       required
                     />
                   </label>
@@ -267,9 +269,19 @@ export default function AuthPage() {
                 <button
                   type="submit"
                   disabled={isSigningIn}
-                  className="w-full rounded-2xl border border-zinc-100/30 bg-zinc-900 text-white py-3 text-sm font-semibold hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                  className="w-full rounded-2xl border border-zinc-100/30 bg-zinc-900 text-white py-3 text-sm font-semibold hover:bg-zinc-800 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:scale-100 disabled:shadow-none shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                 >
-                  {isSigningIn ? "Iniciando sesión..." : "Iniciar sesión"}
+                  {isSigningIn ? (
+                    <>
+                      <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Iniciando sesión...
+                    </>
+                  ) : (
+                    "Iniciar sesión"
+                  )}
                 </button>
 
                 <div className="text-center">
@@ -292,7 +304,7 @@ export default function AuthPage() {
                     <button
                       type="button"
                       onClick={() => signIn("google", { callbackUrl: "/" })}
-                      className="w-full rounded-2xl border border-zinc-900 bg-white text-zinc-900 py-3 text-sm font-semibold hover:bg-zinc-50 transition-colors dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                      className="w-full rounded-2xl border border-zinc-900 bg-white text-zinc-900 py-3 text-sm font-semibold hover:bg-zinc-50 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:border-zinc-700 shadow-sm hover:shadow-md"
                     >
                       Iniciar sesión con Google
                     </button>
@@ -311,7 +323,7 @@ export default function AuthPage() {
                 </p>
               </form>
             ) : (
-              <form className="space-y-5" onSubmit={handleRegister}>
+              <form className="space-y-5 animate-fade-in" onSubmit={handleRegister}>
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                     Nombre completo
@@ -319,7 +331,7 @@ export default function AuthPage() {
                       type="text"
                       value={name}
                       onChange={(event) => setName(event.target.value)}
-                      className="mt-3 w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-4 py-3 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-500"
+                      className="mt-3 w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-4 py-3 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/30 dark:focus:ring-zinc-500/30 transition-all duration-300 focus:shadow-md hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50"
                       required
                     />
                   </label>
@@ -331,7 +343,7 @@ export default function AuthPage() {
                       type="email"
                       value={registerEmail}
                       onChange={(event) => setRegisterEmail(event.target.value)}
-                      className="mt-3 w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-4 py-3 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-500"
+                      className="mt-3 w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-4 py-3 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/30 dark:focus:ring-zinc-500/30 transition-all duration-300 focus:shadow-md hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50"
                       required
                     />
                   </label>
@@ -344,7 +356,7 @@ export default function AuthPage() {
                       value={dni}
                       onChange={(event) => setDni(event.target.value)}
                       placeholder="Ej: 12345678"
-                      className="mt-3 w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-4 py-3 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-500"
+                      className="mt-3 w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-4 py-3 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/30 dark:focus:ring-zinc-500/30 transition-all duration-300 focus:shadow-md hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50"
                       required
                     />
                   </label>
@@ -375,9 +387,19 @@ export default function AuthPage() {
                 <button
                   type="submit"
                   disabled={isRegistering}
-                  className="w-full rounded-2xl border border-zinc-100/30 bg-zinc-900 text-white py-3 text-sm font-semibold hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                  className="w-full rounded-2xl border border-zinc-100/30 bg-zinc-900 text-white py-3 text-sm font-semibold hover:bg-zinc-800 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:scale-100 disabled:shadow-none shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                 >
-                  {isRegistering ? "Registrando..." : "Crear cuenta"}
+                  {isRegistering ? (
+                    <>
+                      <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Registrando...
+                    </>
+                  ) : (
+                    "Crear cuenta"
+                  )}
                 </button>
 
                 <p className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">

@@ -52,7 +52,7 @@ export default function StudentsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar estudiante por nombre o correo..."
-                className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950 px-5 py-3 pl-11 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-500 transition-all"
+                className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950 px-5 py-3 pl-11 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:ring-2 focus:ring-zinc-900/30 dark:focus:ring-zinc-500/30 focus:border-zinc-400 dark:focus:border-zinc-600 transition-all duration-300 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/80 shadow-xs focus:shadow-sm"
               />
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
@@ -76,12 +76,12 @@ export default function StudentsPage() {
                 No se encontraron estudiantes.
               </div>
             ) : (
-              <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              <ul className="space-y-3 p-4 bg-zinc-50/50 dark:bg-zinc-950/20">
                 {filteredStudents.map((student: Student) => (
-                  <li key={student.id} className="p-4 sm:p-6 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+                  <li key={student.id} className="group p-4 sm:p-5 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800/60 rounded-2xl hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 hover:scale-[1.01] hover:shadow-md active:scale-[0.995] transition-all duration-300 ease-in-out animate-slide-in-up">
                     <div className="flex items-center gap-4">
-                      <div className="flex-shrink-0 h-12 w-12 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center">
-                        <span className="text-lg font-medium text-zinc-600 dark:text-zinc-300">{student.name.charAt(0).toUpperCase()}</span>
+                      <div className="flex-shrink-0 h-12 w-12 rounded-full bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center border border-zinc-800 dark:border-zinc-200 shadow-sm group-hover:scale-105 transition-all duration-300">
+                        <span className="text-lg font-bold text-zinc-50 dark:text-zinc-900">{student.name.charAt(0).toUpperCase()}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{student.name}</p>
